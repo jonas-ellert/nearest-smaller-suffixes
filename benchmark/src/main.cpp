@@ -1,7 +1,6 @@
 #include <xss.hpp>
 
-int main()
-{
+int main() {
   std::cout << "Hello World!" << std::endl;
   std::string teststr = "$northamerica$";
   auto strptr = teststr.data();

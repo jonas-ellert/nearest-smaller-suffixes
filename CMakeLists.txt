@@ -6,6 +6,7 @@ function(print TYPE TEXT)
     string(ASCII 27 Esc)
     message(${TYPE} "${Esc}[1m${Esc}[36m[XSS]${Esc}[m ${Esc}[1m${TEXT}${Esc}[m")
 endfunction()
+print(STATUS "")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,11 +22,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 print(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-
-# Turn on malloc count by default
-option(ENABLE_MALLOC_COUNT "Use malloc_count to measure memory usage." ON)
-print(STATUS "ENABLE_MALLOC_COUNT=${ENABLE_MALLOC_COUNT}")
-
 
 # REQUIRE G++/GCC 7.3
 # Require G++ version
@@ -67,14 +63,14 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
         -O0 \
         -ggdb")
 
-if(ENABLE_MALLOC_COUNT)
-    # Add GSACA
-    print(STATUS "Adding malloc_count libraries and includes...")
-    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
-    add_library(malloc_count benchmark/external/malloc_count/malloc_count.c)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/malloc_count)
-    add_definitions(-DMALLOC_COUNT)
-endif(ENABLE_MALLOC_COUNT)
+
+print(STATUS "")
+
+print(STATUS "Adding malloc_count libraries and includes...")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
+add_library(malloc_count benchmark/external/malloc_count/malloc_count.c)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/malloc_count)
+add_definitions(-DMALLOC_COUNT)
 
 print(STATUS "Adding xss includes...")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -88,4 +84,6 @@ endforeach()
 add_subdirectory(benchmark/test)
 add_subdirectory(benchmark/src)
 
-MESSAGE(STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )
+print(STATUS "")
+print(STATUS "DONE!")
+print(STATUS "")
