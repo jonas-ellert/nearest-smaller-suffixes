@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "lce.hpp"
-#include "util.hpp"
+#include "common/lce.hpp"
+#include "common/util.hpp"
 
 namespace xss {
 namespace internal {
@@ -35,18 +35,6 @@ namespace internal {
 
     const lce_type<index_type, value_type> get_lce =
         lce_type<index_type, value_type>{text};
-  };
-
-  template <typename index_type, typename value_type>
-  struct double_context_type {
-    const value_type* text;
-    index_type* nss;
-    index_type* pss;
-    const index_type n;
-
-    const lce_type<index_type, value_type> get_lce =
-        lce_type<index_type, value_type>{text};
-    index_type* array = pss;
   };
 
 } // namespace internal
