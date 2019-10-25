@@ -40,12 +40,20 @@ template <uint64_t log_count = 16, typename instance_collection>
 static void instance_tests(instance_collection&& instances) {
   std::cout << "Number of instances: " << instances.size() << std::endl;
   const uint64_t logging_interval =
-      (instances.size() + log_count - 1) / log_count;
+      (instances.size() + log_count - 2) / (log_count - 1);
 
   auto check_instance = [&](const decltype(instances[0])& t, uint64_t verbose) {
-    if (verbose)
+    if (verbose) {
+      std::vector<bool> used_chars(256, false);
+      for (auto c : t)
+        used_chars[c] = true;
+      uint64_t sigma = 0;
+      for (auto b : used_chars)
+        if (b)
+          ++sigma;
       std::cout << "Testing instance " << verbose << " (of length " << t.size()
-                << "): " << std::flush;
+                << " and alphabet size " << (sigma - 1) << "): " << std::flush;
+    }
 
     check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
     check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
@@ -59,14 +67,15 @@ static void instance_tests(instance_collection&& instances) {
       std::cout << "Backwards done." << std::endl;
   };
 
-  for (uint64_t i = 0; i < instances.size();) {
-    check_instance(instances[i], i);
-    for (uint64_t j = 1; j < logging_interval && i + j < instances.size();
+  for (uint64_t i = 0; i < instances.size() - 1;) {
+    check_instance(instances[i], i + 1);
+    for (uint64_t j = 1; j < logging_interval && i + j < instances.size() - 1;
          ++j) {
       check_instance(instances[i + j], 0);
     }
     i += logging_interval;
   }
+  check_instance(instances[instances.size() - 1], instances.size());
 }
 
 TEST(arrays, hand_selected) {
@@ -88,14 +97,14 @@ TEST(arrays, random) {
   std::cout << "sigma: [16, 255], n: [1, 1023]" << std::endl;
   instance_tests<4>(get_instances_for_random_test(8192, 16, 255, 16, 1023));
   std::cout << "sigma: [2, 15], n: [1024, 16383]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 1024, 16383));
+  instance_tests<4>(get_instances_for_random_test(2048, 2, 15, 1024, 16383));
   std::cout << "sigma: [16, 255], n: [1024, 16383]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(8192, 16, 255, 1024, 16383));
+  instance_tests<4>(get_instances_for_random_test(2048, 16, 255, 1024, 16383));
   std::cout << "sigma: [2, 15], n: [16384, 1048576]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 16384, 1048576));
+  instance_tests<4>(get_instances_for_random_test(128, 2, 15, 16384, 1048576));
   std::cout << "sigma: [16, 255], n: [16384, 1048576]" << std::endl;
   instance_tests<4>(
-      get_instances_for_random_test(8192, 16, 255, 16384, 1048576));
+      get_instances_for_random_test(128, 16, 255, 16384, 1048576));
 }
 
 TEST(dummy, dummy) {

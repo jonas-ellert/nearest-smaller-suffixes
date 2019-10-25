@@ -30,8 +30,8 @@ get_instances_for_random_test(const uint64_t instances,
                               const uint64_t min_n,
                               const uint64_t max_n) {
 
-  auto rng_sigma = random_number_generator<uint64_t>(min_sigma, max_sigma);
-  auto rng_n = random_number_generator<uint8_t>(min_n, max_n);
+  auto rng_sigma = random_number_generator<uint8_t>(min_sigma, max_sigma);
+  auto rng_n = random_number_generator<uint64_t>(min_n, max_n);
   auto rng_char = random_number_generator<uint64_t>();
 
   std::vector<vec_type> result(instances);
