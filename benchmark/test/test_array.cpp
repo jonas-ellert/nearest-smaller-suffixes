@@ -23,6 +23,7 @@
 
 #include "strings/test_lookahead.hpp"
 #include "strings/test_manual.hpp"
+#include "strings/test_overlap.hpp"
 #include "strings/test_random.hpp"
 #include "util/check_array.hpp"
 
@@ -52,19 +53,14 @@ static void instance_tests(instance_collection&& instances) {
         if (b)
           ++sigma;
       std::cout << "Testing instance " << verbose << " (of length " << t.size()
-                << " and alphabet size " << (sigma - 1) << "): " << std::flush;
+                << " and alphabet size " << (sigma - 1) << ")." << std::endl;
     }
 
     check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
     check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
-    if (verbose)
-      std::cout << "Forwards done. " << std::flush;
-
     std::reverse(t.begin(), t.end());
     check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
     check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
-    if (verbose)
-      std::cout << "Backwards done." << std::endl;
   };
 
   for (uint64_t i = 0; i < instances.size() - 1;) {
@@ -87,7 +83,14 @@ TEST(arrays, hand_selected) {
 TEST(arrays, lookahead) {
   std::cout << "Testing XSS with hand selected instances "
             << "(cover all lookahead cases)." << std::endl;
-  instance_tests<8>(get_instances_for_lookahead(512));
+  instance_tests<8>(get_instances_for_lookahead_test(512));
+}
+
+TEST(arrays, overlap) {
+  std::cout
+      << "Testing XSS with instances that maximize overlaps (without runs)."
+      << std::endl;
+  instance_tests<8>(get_instances_for_overlap_test(128, 16, 1048576));
 }
 
 TEST(arrays, random) {

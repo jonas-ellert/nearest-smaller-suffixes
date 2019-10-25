@@ -25,7 +25,7 @@
 #include <sstream>
 
 static std::vector<vec_type>
-get_instances_for_lookahead(const uint64_t instances) {
+get_instances_for_lookahead_test(const uint64_t instances) {
   std::vector<vec_type> result;
   auto add_string = [&](std::string str) {
     result.push_back(vec_type());
