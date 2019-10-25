@@ -24,7 +24,8 @@
 #include "base.hpp"
 #include <sstream>
 
-std::vector<vec_type> get_instances_for_lookahead(const uint64_t instances) {
+static std::vector<vec_type>
+get_instances_for_lookahead(const uint64_t instances) {
   std::vector<vec_type> result;
   auto add_string = [&](std::string str) {
     result.push_back(vec_type());
@@ -116,9 +117,9 @@ std::vector<vec_type> get_instances_for_lookahead(const uint64_t instances) {
 
   std::string prefs[4] = {"", "", "", ""};
 
-  for (uint64_t z = 0; z < 10; ++z) {
-    std::cout << "Prepared " << 10 * z << "%" << std::endl;
-    for (uint64_t i = 0; i < (instances / 10 / 20); ++i) {
+  for (uint64_t z = 0; z < 5; ++z) {
+    std::cout << "Prepared " << 20 * z << "%" << std::endl;
+    for (uint64_t i = 0; i < (instances / 5 / 20); ++i) {
       prefs[0] = ((rng2() == 0) ? get_prefix() : "") + get_lap(rng8()) +
                  get_run(rng8(), rng1024()) + get_run_finisher(rng3());
       for (uint64_t j = 1; j < 4; ++j) {
@@ -135,6 +136,7 @@ std::vector<vec_type> get_instances_for_lookahead(const uint64_t instances) {
       }
     }
   }
+  std::cout << "Prepared 100%" << std::endl;
 
   // Some more instances that have caused problems in the past...
 

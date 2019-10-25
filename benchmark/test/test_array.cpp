@@ -23,6 +23,7 @@
 
 #include "strings/test_lookahead.hpp"
 #include "strings/test_manual.hpp"
+#include "strings/test_random.hpp"
 #include "util/check_array.hpp"
 
 constexpr static uint64_t min_n = 64;
@@ -35,11 +36,11 @@ constexpr static uint64_t run_of_runs_max_pow_rep = 1024;
 
 using check_type = check_array<true, true>;
 
-template <typename instance_collection>
+template <uint64_t log_count = 16, typename instance_collection>
 static void instance_tests(instance_collection&& instances) {
   std::cout << "Number of instances: " << instances.size() << std::endl;
   const uint64_t logging_interval =
-      (instances.size() > 32) ? (instances.size() / 16) : 1;
+      (instances.size() + log_count - 1) / log_count;
 
   auto check_instance = [&](const decltype(instances[0])& t, uint64_t verbose) {
     if (verbose)
@@ -71,13 +72,30 @@ static void instance_tests(instance_collection&& instances) {
 TEST(arrays, hand_selected) {
   std::cout << "Testing XSS with hand selected instances "
             << "(stuff that caused problems in the past)." << std::endl;
-  instance_tests(get_instances_for_manual_test());
+  instance_tests<32>(get_instances_for_manual_test());
 }
 
 TEST(arrays, lookahead) {
   std::cout << "Testing XSS with hand selected instances "
             << "(cover all lookahead cases)." << std::endl;
-  instance_tests(get_instances_for_lookahead(512));
+  instance_tests<8>(get_instances_for_lookahead(512));
+}
+
+TEST(arrays, random) {
+  std::cout << "Testing XSS with random instances..." << std::endl;
+  std::cout << "sigma: [2, 15], n: [1, 1023]" << std::endl;
+  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 16, 1023));
+  std::cout << "sigma: [16, 255], n: [1, 1023]" << std::endl;
+  instance_tests<4>(get_instances_for_random_test(8192, 16, 255, 16, 1023));
+  std::cout << "sigma: [2, 15], n: [1024, 16383]" << std::endl;
+  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 1024, 16383));
+  std::cout << "sigma: [16, 255], n: [1024, 16383]" << std::endl;
+  instance_tests<4>(get_instances_for_random_test(8192, 16, 255, 1024, 16383));
+  std::cout << "sigma: [2, 15], n: [16384, 1048576]" << std::endl;
+  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 16384, 1048576));
+  std::cout << "sigma: [16, 255], n: [16384, 1048576]" << std::endl;
+  instance_tests<4>(
+      get_instances_for_random_test(8192, 16, 255, 16384, 1048576));
 }
 
 TEST(dummy, dummy) {

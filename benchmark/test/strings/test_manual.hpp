@@ -23,7 +23,7 @@
 #include "base.hpp"
 #include <sstream>
 
-std::vector<vec_type> get_instances_for_manual_test() {
+static std::vector<vec_type> get_instances_for_manual_test() {
   std::vector<vec_type> result;
   auto add_string = [&](std::string str) {
     result.push_back(vec_type());
