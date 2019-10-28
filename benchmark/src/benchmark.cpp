@@ -6,6 +6,7 @@
 #include <tlx/cmdline_parser.hpp>
 #include <divsufsort.h>
 #include <divsufsort64.h>
+#include <lyndon-isa-nsv.hpp>
 
 struct {
   std::vector<std::string> file_paths;
@@ -100,6 +101,11 @@ int main(int argc, char const* argv[]) {
       run_generic("pss-array32", info, text_vec.size() - 2, s.number_of_runs, 32, runner);
     }
 
+    if (s.matches("lyndon-isa-nsv32")) {
+      auto runner = [&]() { lyndon_isa_nsv<uint32_t>(&(text_vec.data()[1]), text_vec.size() - 1); };
+      run_generic("lyndon-isa-nsv32", info, text_vec.size() - 2, s.number_of_runs, 32, runner);
+    }
+
     if (s.matches("divsufsort32")) {
       int32_t * sa;
       auto runner = [&]() {
@@ -123,6 +129,11 @@ int main(int argc, char const* argv[]) {
     if (s.matches("pss-array64")) {
       auto runner = [&]() { xss::pss_array<uint64_t>(text_vec.data(), text_vec.size()); };
       run_generic("pss-array64", info, text_vec.size() - 2, s.number_of_runs, 64, runner);
+    }
+
+    if (s.matches("lyndon-isa-nsv64")) {
+      auto runner = [&]() { lyndon_isa_nsv<uint64_t>(&(text_vec.data()[1]), text_vec.size() - 1); };
+      run_generic("lyndon-isa-nsv64", info, text_vec.size() - 2, s.number_of_runs, 64, runner);
     }
 
     if (s.matches("divsufsort64")) {
