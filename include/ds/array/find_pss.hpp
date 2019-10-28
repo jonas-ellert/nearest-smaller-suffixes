@@ -26,7 +26,7 @@ namespace xss {
 namespace internal {
 
   template <typename ctx_type, typename index_type>
-  xss_always_inline static void pss_array_find_pss(const ctx_type& ctx,
+  xss_always_inline static void xss_array_find_pss(const ctx_type& ctx,
                                                    const index_type j,
                                                    const index_type i,
                                                    const index_type lce,

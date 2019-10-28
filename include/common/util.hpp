@@ -36,10 +36,6 @@ namespace internal {
   constexpr static uint64_t MIN_THRESHOLD = 8;
   constexpr static uint64_t DEFAULT_THRESHOLD = 64;
 
-  constexpr static bool USE_LCE_STACK = false;
-  constexpr static bool USE_LCE_AMORTIZE = false;
-  constexpr static bool USE_DEFAULT = USE_LCE_AMORTIZE;
-
   inline static void fix_threshold(uint64_t& threshold) {
     threshold = std::max(threshold, MIN_THRESHOLD);
   }
@@ -51,14 +47,6 @@ namespace internal {
                 << ": Given index_type of width " << sizeof(index_type)
                 << " bytes is insufficient!" << std::endl;
     }
-  }
-
-  template <typename nss_type, typename index_type>
-  static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
-    for (index_type i = 0; i < n; ++i) {
-      nss[i] -= i;
-    }
-    return nss;
   }
 
 } // namespace internal
