@@ -25,6 +25,7 @@
 #include "strings/test_manual.hpp"
 #include "strings/test_overlap.hpp"
 #include "strings/test_random.hpp"
+#include "strings/test_runs.hpp"
 #include "util/check_array.hpp"
 
 constexpr static uint64_t min_n = 64;
@@ -80,17 +81,22 @@ TEST(arrays, hand_selected) {
   instance_tests<32>(get_instances_for_manual_test());
 }
 
-TEST(arrays, lookahead) {
-  std::cout << "Testing XSS with hand selected instances "
-            << "(cover all lookahead cases)." << std::endl;
-  instance_tests<8>(get_instances_for_lookahead_test(512));
-}
-
 TEST(arrays, overlap) {
   std::cout
       << "Testing XSS with instances that maximize overlaps (without runs)."
       << std::endl;
   instance_tests<8>(get_instances_for_overlap_test(128, 16, 1048576));
+}
+
+TEST(arrays, runs) {
+  std::cout << "Testing XSS with runs of runs." << std::endl;
+  instance_tests<8>(get_instances_for_run_of_runs_test(1048576));
+}
+
+TEST(arrays, lookahead) {
+  std::cout << "Testing XSS with hand selected instances "
+            << "(cover all lookahead cases)." << std::endl;
+  instance_tests<8>(get_instances_for_lookahead_test(512));
 }
 
 TEST(arrays, random) {
