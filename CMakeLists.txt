@@ -66,20 +66,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
 
 print(STATUS "")
 
-print(STATUS "Adding malloc_count libraries and includes...")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
-add_library(malloc_count benchmark/external/malloc_count/malloc_count.c)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/malloc_count)
-add_definitions(-DMALLOC_COUNT)
-
 print(STATUS "Adding xss includes...")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-print(STATUS "List of include directories:")
-get_property(all_include_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${all_include_dirs})
-    print(STATUS "    ${dir}")
-endforeach()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
 add_subdirectory(benchmark/test)
 add_subdirectory(benchmark/src)

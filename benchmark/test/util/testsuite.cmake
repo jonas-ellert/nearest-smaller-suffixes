@@ -11,6 +11,12 @@ ExternalProject_Add(
 )
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/gtest/include)
 
+print(STATUS "    List of include directories:")
+get_property(all_include_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${all_include_dirs})
+    print(STATUS "        ${dir}")
+endforeach()
+
 # Custom test target to run the googletest tests
 add_custom_target(check)
 add_custom_command(
