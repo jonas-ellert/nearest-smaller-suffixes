@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "../../common/util.hpp"
+
 namespace xss {
 
 class bit_vector {
@@ -66,7 +68,7 @@ public:
   bit_vector& operator=(bit_vector&& other) {
     n_bits_ = other.n_bits_;
     n_words_ = other.n_words_;
-    n_bytes_ = n_bytes_.n_words_;
+    n_bytes_ = other.n_bytes_;
     std::swap(data_, other.data_);
     return (*this);
   }
