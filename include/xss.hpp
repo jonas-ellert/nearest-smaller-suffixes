@@ -20,6 +20,6 @@
 
 #pragma once
 
-#include "common/util.hpp"
 #include "ds/array/algorithm.hpp"
+#include "ds/tree/algorithm.hpp"
 //#include "ds/tree/algorithm.hpp"

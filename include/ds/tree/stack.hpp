@@ -127,7 +127,8 @@ public:
       : buffer_capacity_(get_buffer_capacity(buffer_bytes)),
         buffer_half_capacity_(buffer_capacity_ >> 1),
         cur_buffer_capacity_(64ULL * 1024 / sizeof(index_type)),
-        cur_buffer_size_(1), base_stack_(std::move(stack)) {
+        cur_buffer_size_(1),
+        base_stack_(std::move(stack)) {
     static_assert(sizeof(index_type) == 4 || sizeof(index_type) == 8);
     cur_buffer_ =
         (index_type*) malloc(cur_buffer_capacity_ * sizeof(index_type));
@@ -186,6 +187,10 @@ public:
       }
       return;
     }
+  }
+
+  ~buffered_stack() {
+    delete cur_buffer_;
   }
 
   buffered_stack& operator=(buffered_stack&& other) = delete;

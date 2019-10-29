@@ -20,17 +20,30 @@
 
 #pragma once
 
-#include "common/lce.hpp"
-#include "common/util.hpp"
+#include "../ds/tree/bit_vector.hpp"
+#include "lce.hpp"
+#include "util.hpp"
 
 namespace xss {
 namespace internal {
 
   template <typename index_type, typename value_type>
-  struct single_context_type {
+  struct array_context_type {
 
     const value_type* text;
     index_type* array;
+    const index_type n;
+
+    const lce_type<index_type, value_type> get_lce =
+        lce_type<index_type, value_type>{text};
+  };
+
+  template <typename index_type, typename value_type>
+  struct tree_context_type {
+
+    const value_type* text;
+    bit_vector& bv;
+    parentheses_stream& stream;
     const index_type n;
 
     const lce_type<index_type, value_type> get_lce =

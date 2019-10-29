@@ -21,14 +21,16 @@
 #pragma once
 
 #include "../../common/util.hpp"
+#include <cstring>
+#include <sstream>
 
 namespace xss {
 
 class bit_vector {
 private:
-  const uint64_t n_bits_;
-  const uint64_t n_words_;
-  const uint64_t n_bytes_;
+  uint64_t n_bits_;
+  uint64_t n_words_;
+  uint64_t n_bytes_;
   uint64_t* data_;
 
   xss_always_inline static uint64_t mod64(const uint64_t idx) {
@@ -37,8 +39,8 @@ private:
 
 public:
   bit_vector(const uint64_t n)
-      : n_(n),
-        n_words_((n_ + 127) >> 6),
+      : n_bits_(n),
+        n_words_((n_bits_ + 127) >> 6),
         n_bytes_(n_words_ << 3),
         data_(static_cast<uint64_t*>(malloc(n_bytes_))) {}
 
@@ -61,6 +63,14 @@ public:
     return data_[idx >> 6] & (1ULL << mod64(idx));
   }
 
+  uint64_t size() const {
+    return n_bits_;
+  }
+
+  uint64_t* data() {
+    return data_;
+  }
+
   ~bit_vector() {
     delete data_;
   }
@@ -76,9 +86,69 @@ public:
   bit_vector(bit_vector&& other) {
     (*this) = std::move(other);
   }
-
   bit_vector& operator=(const bit_vector& other) = delete;
   bit_vector(const bit_vector& other) = delete;
 };
 
+class parentheses_stream {
+private:
+  bit_vector& bv_;
+  uint64_t* bv_data_;
+
+  uint64_t current_word_macro_idx_;
+  uint64_t current_word_micro_idx_;
+  uint64_t current_word_;
+
+  xss_always_inline void automatic_new_word() {
+    if (xss_unlikely(++current_word_micro_idx_ == 64)) {
+      bv_data_[current_word_macro_idx_++] = current_word_;
+      current_word_micro_idx_ = 0;
+      current_word_ = 0ULL;
+    }
+  }
+
+public:
+  parentheses_stream(bit_vector& bv)
+      : bv_(bv),
+        bv_data_(bv_.data()),
+        current_word_macro_idx_(0),
+        current_word_micro_idx_(0),
+        current_word_(0ULL) {}
+
+  xss_always_inline void append_opening_parenthesis() {
+    current_word_ |= (1ULL << current_word_micro_idx_);
+    automatic_new_word();
+  }
+
+  xss_always_inline void append_closing_parenthesis() {
+    current_word_ &= ~(1ULL << current_word_micro_idx_);
+    automatic_new_word();
+  }
+
+  xss_always_inline void flush() {
+    bv_data_[current_word_macro_idx_] = current_word_;
+  }
+
+  ~parentheses_stream() {
+    flush();
+  }
+};
+
 } // namespace xss
+
+namespace std {
+
+[[maybe_unused]] static std::string to_string(const xss::bit_vector& bv) {
+  std::stringstream result;
+  for (uint64_t i = 0; i < bv.size(); ++i) {
+    result << (bv.get(i) ? "(" : ")");
+  }
+  return result.str();
+}
+
+[[maybe_unused]] static std::ostream& operator<<(std::ostream& out,
+                                                 const xss::bit_vector& bv) {
+  return out << std::to_string(bv);
+}
+
+} // namespace std

@@ -51,7 +51,8 @@ TEST(stack, unbuffered_random) {
 TEST(stack, buffered_random) {
   std::cout << "Testing telescope stack with " << number_of_elements
             << " random elements." << std::endl;
-  buffered_stack<telescope_stack, uint64_t> stack(number_of_elements, telescope_stack());
+  buffered_stack<telescope_stack, uint64_t> stack(number_of_elements,
+                                                  telescope_stack());
   test_random(stack);
 }
 

@@ -22,7 +22,7 @@
 
 #include "../../common/util.hpp"
 #include "amortized_lookahead.hpp"
-#include "context.hpp"
+#include "common/context.hpp"
 #include "find_pss.hpp"
 #include "run_extension.hpp"
 
@@ -38,7 +38,7 @@ static auto pss_array(const value_type* text,
 
   std::vector<index_type> result(n, 0);
   index_type* array = result.data();
-  single_context_type<index_type, value_type> ctx{text, array, (index_type) n};
+  array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
 
   array[0] = 0; // will be overwritten with n later
 
@@ -88,7 +88,7 @@ static auto nss_array(const value_type* text,
 
   std::vector<index_type> result(n, 0);
   index_type* array = result.data();
-  single_context_type<index_type, value_type> ctx{text, array, (index_type) n};
+  array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
 
   array[0] = 0; // will be overwritten with n - 1 later
 

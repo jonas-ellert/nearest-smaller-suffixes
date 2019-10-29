@@ -27,6 +27,7 @@
 #include "strings/test_random.hpp"
 #include "strings/test_runs.hpp"
 #include "util/check_array.hpp"
+#include "util/check_tree.hpp"
 
 constexpr static uint64_t min_n = 64;
 constexpr static uint64_t max_n = 128ULL * 1024;
@@ -36,10 +37,20 @@ constexpr static uint64_t run_of_runs_max_rep = 10;
 constexpr static uint64_t run_of_runs_min_pow_rep = 16;
 constexpr static uint64_t run_of_runs_max_pow_rep = 1024;
 
-using check_type = check_array<true, true>;
+using check_array_type = check_array<true, true>;
+using check_tree_type = check_tree<true, true>;
 
-template <uint64_t log_count = 16, typename instance_collection>
+enum structure_type { array, tree };
+constexpr structure_type TEST_ARRAY = structure_type::array;
+constexpr structure_type TEST_TREE = structure_type::tree;
+
+template <uint64_t log_count = 16,
+          structure_type stype,
+          typename instance_collection>
 static void instance_tests(instance_collection&& instances) {
+  using check_type =
+      typename std::conditional<stype == structure_type::array,
+                                check_array_type, check_tree_type>::type;
   std::cout << "Number of instances: " << instances.size() << std::endl;
   const uint64_t logging_interval =
       (instances.size() + log_count - 2) / (log_count - 1);
@@ -57,11 +68,17 @@ static void instance_tests(instance_collection&& instances) {
                 << " and alphabet size " << (sigma - 1) << ")." << std::endl;
     }
 
-    check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
-    check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
-    std::reverse(t.begin(), t.end());
-    check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
-    check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
+    if constexpr (stype == structure_type::array) {
+      check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
+      check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
+      std::reverse(t.begin(), t.end());
+      check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
+      check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
+    } else {
+      check_type::check_bps(t, xss::pss_tree_naive(t.data(), t.size()));
+      std::reverse(t.begin(), t.end());
+      check_type::check_bps(t, xss::pss_tree_naive(t.data(), t.size()));
+    }
   };
 
   for (uint64_t i = 0; i < instances.size() - 1;) {
@@ -78,41 +95,94 @@ static void instance_tests(instance_collection&& instances) {
 TEST(arrays, hand_selected) {
   std::cout << "Testing XSS with hand selected instances "
             << "(stuff that caused problems in the past)." << std::endl;
-  instance_tests<32>(get_instances_for_manual_test());
+  instance_tests<32, TEST_ARRAY>(get_instances_for_manual_test());
 }
 
 TEST(arrays, overlap) {
   std::cout
       << "Testing XSS with instances that maximize overlaps (without runs)."
       << std::endl;
-  instance_tests<8>(get_instances_for_overlap_test(128, 16, 1048576));
+  instance_tests<8, TEST_ARRAY>(
+      get_instances_for_overlap_test(128, 16, 1048576));
 }
 
 TEST(arrays, runs) {
   std::cout << "Testing XSS with runs of runs." << std::endl;
-  instance_tests<8>(get_instances_for_run_of_runs_test(1048576));
+  instance_tests<8, TEST_ARRAY>(get_instances_for_run_of_runs_test(1048576));
 }
 
 TEST(arrays, lookahead) {
   std::cout << "Testing XSS with hand selected instances "
             << "(cover all lookahead cases)." << std::endl;
-  instance_tests<8>(get_instances_for_lookahead_test(512));
+  instance_tests<8, TEST_ARRAY>(get_instances_for_lookahead_test(512));
 }
 
 TEST(arrays, random) {
   std::cout << "Testing XSS with random instances..." << std::endl;
   std::cout << "sigma: [2, 15], n: [1, 1023]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(8192, 2, 15, 16, 1023));
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(8192, 2, 15, 16, 1023));
   std::cout << "sigma: [16, 255], n: [1, 1023]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(8192, 16, 255, 16, 1023));
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(8192, 16, 255, 16, 1023));
   std::cout << "sigma: [2, 15], n: [1024, 16383]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(2048, 2, 15, 1024, 16383));
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(2048, 2, 15, 1024, 16383));
   std::cout << "sigma: [16, 255], n: [1024, 16383]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(2048, 16, 255, 1024, 16383));
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(2048, 16, 255, 1024, 16383));
   std::cout << "sigma: [2, 15], n: [16384, 1048576]" << std::endl;
-  instance_tests<4>(get_instances_for_random_test(128, 2, 15, 16384, 1048576));
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(128, 2, 15, 16384, 1048576));
   std::cout << "sigma: [16, 255], n: [16384, 1048576]" << std::endl;
-  instance_tests<4>(
+  instance_tests<4, TEST_ARRAY>(
+      get_instances_for_random_test(128, 16, 255, 16384, 1048576));
+}
+
+TEST(tree, hand_selected) {
+  std::cout << "Testing XSS with hand selected instances "
+            << "(stuff that caused problems in the past)." << std::endl;
+  instance_tests<32, TEST_TREE>(get_instances_for_manual_test());
+}
+
+TEST(tree, overlap) {
+  std::cout
+      << "Testing XSS with instances that maximize overlaps (without runs)."
+      << std::endl;
+  instance_tests<8, TEST_TREE>(
+      get_instances_for_overlap_test(128, 16, 1048576));
+}
+
+TEST(tree, runs) {
+  std::cout << "Testing XSS with runs of runs." << std::endl;
+  instance_tests<8, TEST_TREE>(get_instances_for_run_of_runs_test(1048576));
+}
+
+TEST(tree, lookahead) {
+  std::cout << "Testing XSS with hand selected instances "
+            << "(cover all lookahead cases)." << std::endl;
+  instance_tests<8, TEST_TREE>(get_instances_for_lookahead_test(512));
+}
+
+TEST(tree, random) {
+  std::cout << "Testing XSS with random instances..." << std::endl;
+  std::cout << "sigma: [2, 15], n: [1, 1023]" << std::endl;
+  instance_tests<4, TEST_TREE>(
+      get_instances_for_random_test(8192, 2, 15, 16, 1023));
+  std::cout << "sigma: [16, 255], n: [1, 1023]" << std::endl;
+  instance_tests<4, TEST_TREE>(
+      get_instances_for_random_test(8192, 16, 255, 16, 1023));
+  std::cout << "sigma: [2, 15], n: [1024, 16383]" << std::endl;
+  instance_tests<4, TEST_TREE>(
+      get_instances_for_random_test(2048, 2, 15, 1024, 16383));
+  std::cout << "sigma: [16, 255], n: [1024, 16383]" << std::endl;
+  instance_tests<4, TEST_TREE>(
+      get_instances_for_random_test(2048, 16, 255, 1024, 16383));
+  std::cout << "sigma: [2, 15], n: [16384, 1048576]" << std::endl;
+  instance_tests<4, TEST_TREE>(
+      get_instances_for_random_test(128, 2, 15, 16384, 1048576));
+  std::cout << "sigma: [16, 255], n: [16384, 1048576]" << std::endl;
+  instance_tests<4, TEST_TREE>(
       get_instances_for_random_test(128, 16, 255, 16384, 1048576));
 }
 
@@ -142,4 +212,8 @@ TEST(dummy, dummy) {
 
   check_array<>::check_nss(teststr, n);
   check_array<>::check_pss(teststr, p);
+
+  auto bps = xss::pss_tree_naive(strptr, teststr.size());
+  std::cout << "PSS Tree: " << bps << std::endl;
+  check_tree<>::check_bps(teststr, bps);
 }

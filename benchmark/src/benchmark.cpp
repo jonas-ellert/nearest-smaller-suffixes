@@ -88,6 +88,14 @@ int main(int argc, char const* argv[]) {
     const std::string info =
         std::string("file=") + file + " sigma=" + std::to_string(sigma);
 
+    if (s.matches("pss-tree")) {
+      auto runner = [&]() {
+        xss::pss_tree_naive(text_vec.data(), text_vec.size());
+      };
+      run_generic("pss-tree", info, text_vec.size() - 2, s.number_of_runs, 2,
+                  runner);
+    }
+
     if (s.matches("lyndon-array32")) {
       auto runner = [&]() {
         xss::lyndon_array<uint32_t>(text_vec.data(), text_vec.size());

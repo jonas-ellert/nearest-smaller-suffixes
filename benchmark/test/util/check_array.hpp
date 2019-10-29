@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <common/util.hpp>
+#include <iostream>
 #include <omp.h>
 
 template <bool abort_on_error = true,
