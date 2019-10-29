@@ -24,8 +24,7 @@
 #pragma once
 
 template <typename index_type = uint32_t, typename value_type>
-static auto lyndon_isa_nsv(const value_type* text,
-                         const uint64_t n) {
+static auto lyndon_isa_nsv(const value_type* text, const uint64_t n) {
   static_assert(sizeof(index_type) == 4 || sizeof(index_type) == 8);
   if (sizeof(index_type) == 4 && n > std::numeric_limits<int>::max()) {
     std::cerr << "WARNING: lyndon_isa_nsv --- n=" << n
@@ -33,18 +32,18 @@ static auto lyndon_isa_nsv(const value_type* text,
               << " bytes is insufficient!" << std::endl;
   }
 
-  using sa_type = typename std::conditional<sizeof(index_type) == 4, int32_t, int64_t>::type;
+  using sa_type = typename std::conditional<sizeof(index_type) == 4, int32_t,
+                                            int64_t>::type;
 
   std::vector<index_type> result(n);
-  sa_type * sa = (sa_type *) result.data();
+  sa_type* sa = (sa_type*) result.data();
   if constexpr (sizeof(index_type) == 4) {
     divsufsort(text, sa, n);
-  }
-  else {
+  } else {
     divsufsort64(text, sa, n);
   }
 
-  index_type * isa = (index_type *) malloc(n * sizeof(index_type));
+  index_type* isa = (index_type*) malloc(n * sizeof(index_type));
   for (uint64_t i = 0; i < n; ++i) {
     isa[sa[i]] = i;
   }

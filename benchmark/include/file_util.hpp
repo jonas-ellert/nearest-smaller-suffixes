@@ -119,9 +119,8 @@ static std::vector<uint8_t> file_to_instance(const std::string& file_name,
   return result;
 }
 
-[[maybe_unused]]
-static std::vector<uint8_t> file_to_instance(const std::string& file_name,
-                                             const uint64_t prefix_size) {
+[[maybe_unused]] static std::vector<uint8_t>
+file_to_instance(const std::string& file_name, const uint64_t prefix_size) {
   uint8_t dummy;
   return file_to_instance(file_name, prefix_size, dummy);
 }
