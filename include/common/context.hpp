@@ -38,12 +38,13 @@ namespace internal {
         lce_type<index_type, value_type>{text};
   };
 
-  template <typename index_type, typename value_type>
+  template <typename stack_type, typename index_type, typename value_type>
   struct tree_context_type {
 
     const value_type* text;
     bit_vector& bv;
     parentheses_stream& stream;
+    stack_type& stack;
     const index_type n;
 
     const lce_type<index_type, value_type> get_lce =

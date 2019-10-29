@@ -89,9 +89,7 @@ int main(int argc, char const* argv[]) {
         std::string("file=") + file + " sigma=" + std::to_string(sigma);
 
     if (s.matches("pss-tree")) {
-      auto runner = [&]() {
-        xss::pss_tree_naive(text_vec.data(), text_vec.size());
-      };
+      auto runner = [&]() { xss::pss_tree(text_vec.data(), text_vec.size()); };
       run_generic("pss-tree", info, text_vec.size() - 2, s.number_of_runs, 2,
                   runner);
     }

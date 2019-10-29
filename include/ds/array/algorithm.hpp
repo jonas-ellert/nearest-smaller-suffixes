@@ -47,7 +47,7 @@ static auto pss_array(const value_type* text,
     j = i - 1;
     lce = ctx.get_lce.without_bounds(j, i);
 
-    if (xss_likely(lce < threshold)) {
+    if (xss_likely(lce <= threshold)) {
       while (text[j + lce] > text[i + lce]) {
         j = array[j];
         lce = ctx.get_lce.without_bounds(j, i);

@@ -22,20 +22,25 @@
 
 #include "../../common/util.hpp"
 #include "bit_vector.hpp"
+#include "find_pss.hpp"
 #include "stack.hpp"
 
 namespace xss {
 
 template <typename index_type = uint64_t, typename value_type>
-static auto pss_tree_naive(const value_type* text, const uint64_t n) {
+static auto pss_tree(const value_type* text,
+                     const uint64_t n,
+                     uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
-  warn_type_width<index_type>(n, "xss::pss_tree_naive");
+  using stack_type = buffered_stack<telescope_stack, index_type>;
+  warn_type_width<index_type>(n, "xss::pss_tree");
+  fix_threshold(threshold);
 
   bit_vector result((n << 1) + 2);
   parentheses_stream stream(result);
-  buffered_stack<telescope_stack, index_type> stack(n >> 3, telescope_stack());
-  tree_context_type<index_type, value_type> ctx{text, result, stream,
-                                                (index_type) n};
+  stack_type stack(n >> 3, telescope_stack());
+  tree_context_type<stack_type, index_type, value_type> ctx{
+      text, result, stream, stack, (index_type) n};
 
   // open node 0;
   stream.append_opening_parenthesis();
@@ -46,12 +51,27 @@ static auto pss_tree_naive(const value_type* text, const uint64_t n) {
     j = i - 1; // = stack.top();
     lce = ctx.get_lce.without_bounds(j, i);
 
-    while (text[j + lce] > text[i + lce]) {
-      stack.pop();
-      j = stack.top();
-      lce = ctx.get_lce.without_bounds(j, i);
-      stream.append_closing_parenthesis();
+    if (xss_likely(lce <= threshold)) {
+      while (text[j + lce] > text[i + lce]) {
+        stack.pop();
+        j = stack.top();
+        stream.append_closing_parenthesis();
+        lce = ctx.get_lce.without_bounds(j, i);
+        if (xss_unlikely(lce > threshold))
+          break;
+      }
     }
+
+    if (xss_likely(lce <= threshold)) {
+      stack.push(i);
+      stream.append_opening_parenthesis();
+      continue;
+    }
+
+    index_type max_lce, max_lce_j, pss_of_i;
+    pss_tree_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
+
+//    std::cout << "\n" << i << " " << pss_of_i << " " << max_lce_j << " " << max_lce << std::endl;
 
     stack.push(i);
     stream.append_opening_parenthesis();

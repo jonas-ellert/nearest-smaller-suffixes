@@ -75,9 +75,9 @@ static void instance_tests(instance_collection&& instances) {
       check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
       check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
     } else {
-      check_type::check_bps(t, xss::pss_tree_naive(t.data(), t.size()));
+      check_type::check_bps(t, xss::pss_tree(t.data(), t.size()));
       std::reverse(t.begin(), t.end());
-      check_type::check_bps(t, xss::pss_tree_naive(t.data(), t.size()));
+      check_type::check_bps(t, xss::pss_tree(t.data(), t.size()));
     }
   };
 
@@ -106,15 +106,15 @@ TEST(arrays, overlap) {
       get_instances_for_overlap_test(128, 16, 1048576));
 }
 
-TEST(arrays, runs) {
-  std::cout << "Testing XSS with runs of runs." << std::endl;
-  instance_tests<8, TEST_ARRAY>(get_instances_for_run_of_runs_test(1048576));
-}
-
 TEST(arrays, lookahead) {
   std::cout << "Testing XSS with hand selected instances "
             << "(cover all lookahead cases)." << std::endl;
   instance_tests<8, TEST_ARRAY>(get_instances_for_lookahead_test(512));
+}
+
+TEST(arrays, runs) {
+  std::cout << "Testing XSS with runs of runs." << std::endl;
+  instance_tests<8, TEST_ARRAY>(get_instances_for_run_of_runs_test(1048576));
 }
 
 TEST(arrays, random) {
@@ -153,15 +153,15 @@ TEST(tree, overlap) {
       get_instances_for_overlap_test(128, 16, 1048576));
 }
 
-TEST(tree, runs) {
-  std::cout << "Testing XSS with runs of runs." << std::endl;
-  instance_tests<8, TEST_TREE>(get_instances_for_run_of_runs_test(1048576));
-}
-
 TEST(tree, lookahead) {
   std::cout << "Testing XSS with hand selected instances "
             << "(cover all lookahead cases)." << std::endl;
   instance_tests<8, TEST_TREE>(get_instances_for_lookahead_test(512));
+}
+
+TEST(tree, runs) {
+  std::cout << "Testing XSS with runs of runs." << std::endl;
+  instance_tests<8, TEST_TREE>(get_instances_for_run_of_runs_test(1048576));
 }
 
 TEST(tree, random) {
@@ -213,7 +213,7 @@ TEST(dummy, dummy) {
   check_array<>::check_nss(teststr, n);
   check_array<>::check_pss(teststr, p);
 
-  auto bps = xss::pss_tree_naive(strptr, teststr.size());
+  auto bps = xss::pss_tree(strptr, teststr.size());
   std::cout << "PSS Tree: " << bps << std::endl;
   check_tree<>::check_bps(teststr, bps);
 }

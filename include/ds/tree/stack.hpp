@@ -102,6 +102,26 @@ public:
   telescope_stack& operator=(const telescope_stack&) = delete;
 };
 
+class reverse_telescope_stack {
+private:
+  telescope_stack base_stack;
+
+public:
+  constexpr static uint64_t max_val = std::numeric_limits<uint64_t>::max();
+
+  xss_always_inline uint64_t top() const {
+    return max_val - base_stack.top();
+  }
+
+  xss_always_inline void pop() {
+    base_stack.pop();
+  }
+
+  xss_always_inline void push(const uint64_t e) {
+    base_stack.push(max_val - e);
+  }
+};
+
 // non-shrinking buffer (since we are interested in the memory peak only)
 template <typename stack_type, typename index_type>
 class buffered_stack {
