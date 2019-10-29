@@ -58,7 +58,7 @@ template <typename... n_types>
 static std::vector<vec_type>
 get_instances_for_run_of_runs_test(const uint64_t n) {
   std::vector<vec_type> result;
-  for (uint64_t r = 2; r <= std::min((n - 2) / 2, (uint64_t) 2048); r *= 2) {
+  for (uint64_t r = 2; r <= std::min((n - 2) >> 2, (uint64_t) 512); r *= 2) {
     result.push_back(generate_test_run_of_runs(n, r));
   }
   return result;

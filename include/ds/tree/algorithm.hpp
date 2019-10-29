@@ -23,6 +23,7 @@
 #include "../../common/util.hpp"
 #include "bit_vector.hpp"
 #include "find_pss.hpp"
+#include "run_extension.hpp"
 #include "stack.hpp"
 
 namespace xss {
@@ -68,13 +69,20 @@ static auto pss_tree(const value_type* text,
       continue;
     }
 
-    index_type max_lce, max_lce_j, pss_of_i;
+    index_type max_lce = 0, max_lce_j = 0, pss_of_i = 0;
     pss_tree_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
 
-//    std::cout << "\n" << i << " " << pss_of_i << " " << max_lce_j << " " << max_lce << std::endl;
+    //    std::cout << "\n" << i << " " << pss_of_i << " " << max_lce_j << " "
+    //    << max_lce << std::endl;
 
     stack.push(i);
     stream.append_opening_parenthesis();
+
+    const index_type distance = i - max_lce_j;
+    if (xss_unlikely(max_lce >= 2 * distance))
+      pss_tree_run_extension(ctx, max_lce_j, i, max_lce, distance);
+    //    else
+    //      pss_tree_amortized_lookahead(ctx, max_lce_j, i, max_lce, distance);
   }
 
   while (stack.top() > 0) {

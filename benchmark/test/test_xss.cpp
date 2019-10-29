@@ -161,7 +161,8 @@ TEST(tree, lookahead) {
 
 TEST(tree, runs) {
   std::cout << "Testing XSS with runs of runs." << std::endl;
-  instance_tests<8, TEST_TREE>(get_instances_for_run_of_runs_test(1048576));
+  instance_tests<8, TEST_TREE>(
+      get_instances_for_run_of_runs_test(64ULL * 1024));
 }
 
 TEST(tree, random) {

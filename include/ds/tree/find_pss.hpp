@@ -76,7 +76,8 @@ namespace internal {
       new_lce = ctx.get_lce.without_bounds(new_j, i);
     }
 
-//    std::cout << "RSS: " << rev_stack_size << " new_j: " << new_j << std::endl;
+    //    std::cout << "RSS: " << rev_stack_size << " new_j: " << new_j <<
+    //    std::endl;
 
     // now the PSS is contained in the reverse stack (or it is 0)
     // find it with binary search!
@@ -94,8 +95,7 @@ namespace internal {
         // PSS is still on reverse stack
         rev_stack_size -= half_size;
         continue;
-      }
-      else {
+      } else {
         // PSS is not on reverse stack
         max_lce_j = new_j;
         max_lce = new_lce;
@@ -122,15 +122,15 @@ namespace internal {
         max_lce = new_lce;
       }
       stack.push(pss_of_i);
-    }
-    else {
+    } else {
       // pss = 0
       pss_of_i = 0;
       max_lce_j = new_j;
       max_lce = new_lce;
       ctx.stream.append_closing_parenthesis();
     }
-//    std::cout << "RSS: " << rev_stack_size << " pss: " << pss_of_i << std::endl;
+    //    std::cout << "RSS: " << rev_stack_size << " pss: " << pss_of_i <<
+    //    std::endl;
   }
 
 } // namespace internal

@@ -59,6 +59,14 @@ public:
     data_[idx >> 6] &= ~(1ULL << mod64(idx));
   }
 
+  // todo: make non branching
+  xss_always_inline void set(const uint64_t idx, bool val) {
+    if (val)
+      set_one(idx);
+    else
+      set_zero(idx);
+  }
+
   xss_always_inline bool get(const uint64_t idx) const {
     return data_[idx >> 6] & (1ULL << mod64(idx));
   }
@@ -115,6 +123,18 @@ public:
         current_word_micro_idx_(0),
         current_word_(0ULL) {}
 
+  xss_always_inline uint64_t bits_written() const {
+    return (current_word_macro_idx_ << 6) + current_word_micro_idx_;
+  }
+
+  xss_always_inline void flush() {
+    bv_data_[current_word_macro_idx_] = current_word_;
+  }
+
+  xss_always_inline void fetch() {
+    current_word_ = bv_data_[current_word_macro_idx_];
+  }
+
   xss_always_inline void append_opening_parenthesis() {
     current_word_ |= (1ULL << current_word_micro_idx_);
     automatic_new_word();
@@ -125,8 +145,20 @@ public:
     automatic_new_word();
   }
 
-  xss_always_inline void flush() {
-    bv_data_[current_word_macro_idx_] = current_word_;
+  xss_always_inline void append_copy(const uint64_t distance,
+                                     const uint64_t length) {
+    flush();
+    const uint64_t rhs =
+        (current_word_macro_idx_ << 6) + current_word_micro_idx_;
+    const uint64_t lhs = rhs - distance;
+    for (uint64_t i = 0; i < length; ++i) {
+      bv_.set(rhs + i, bv_.get(lhs + i));
+    }
+    current_word_micro_idx_ += length;
+    current_word_macro_idx_ += current_word_micro_idx_ >> 6;
+    current_word_micro_idx_ =
+        current_word_micro_idx_ - ((current_word_micro_idx_ >> 6) << 6);
+    fetch();
   }
 
   ~parentheses_stream() {
