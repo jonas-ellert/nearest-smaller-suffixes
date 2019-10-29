@@ -103,17 +103,17 @@ public:
 };
 
 // non-shrinking buffer (since we are interested in the memory peak only)
-template <typename index_type>
-class telescope_stack_buffered {
+template <typename stack_type, typename index_type>
+class buffered_stack {
 private:
   const uint64_t buffer_capacity_;
   const uint64_t buffer_half_capacity_;
 
-  telescope_stack base_stack_;
-
   index_type cur_buffer_capacity_;
   index_type cur_buffer_size_;
   index_type* cur_buffer_;
+
+  stack_type base_stack_;
 
   xss_always_inline uint64_t get_buffer_capacity(const uint64_t buffer_bytes) {
     const uint64_t actual_bytes =
@@ -123,16 +123,15 @@ private:
   }
 
 public:
-  telescope_stack_buffered(const uint64_t buffer_bytes)
+  buffered_stack(const uint64_t buffer_bytes, stack_type&& stack)
       : buffer_capacity_(get_buffer_capacity(buffer_bytes)),
         buffer_half_capacity_(buffer_capacity_ >> 1),
         cur_buffer_capacity_(64ULL * 1024 / sizeof(index_type)),
-        cur_buffer_size_(1) {
+        cur_buffer_size_(1), base_stack_(std::move(stack)) {
     static_assert(sizeof(index_type) == 4 || sizeof(index_type) == 8);
     cur_buffer_ =
         (index_type*) malloc(cur_buffer_capacity_ * sizeof(index_type));
     cur_buffer_[0] = 0ULL;
-    std::cout << buffer_capacity_ << " " << cur_buffer_capacity_ << std::endl;
   }
 
   xss_always_inline uint64_t top() const {
@@ -187,9 +186,10 @@ public:
       }
       return;
     }
-
   }
 
-  telescope_stack_buffered(const telescope_stack_buffered&) = delete;
-  telescope_stack_buffered& operator=(const telescope_stack_buffered&) = delete;
+  buffered_stack& operator=(buffered_stack&& other) = delete;
+  buffered_stack(buffered_stack&& other) = delete;
+  buffered_stack(const buffered_stack&) = delete;
+  buffered_stack& operator=(const buffered_stack&) = delete;
 };
