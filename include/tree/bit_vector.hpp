@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "../../common/util.hpp"
+#include "common/util.hpp"
 #include <cstring>
 #include <sstream>
 

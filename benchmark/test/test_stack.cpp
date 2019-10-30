@@ -19,7 +19,7 @@
 //  IN THE SOFTWARE.
 
 #include "util/random.hpp"
-#include <ds/tree/stack.hpp>
+#include <tree/stack.hpp>
 #include <gtest/gtest.h>
 
 constexpr static uint64_t number_of_elements = 1024ULL * 1024;

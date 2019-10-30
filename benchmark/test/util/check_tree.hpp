@@ -23,8 +23,8 @@
 #include "check_array.hpp"
 #include <gtest/gtest.h>
 
-#include <ds/tree/support/pss_tree_support_naive.hpp>
-#include <ds/tree/support/pss_tree_support_sdsl.hpp>
+#include <tree/support/pss_tree_support_naive.hpp>
+#include <tree/support/pss_tree_support_sdsl.hpp>
 
 template <bool abort_on_error = true,
           bool report_input_text_on_error = true,

@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "../ds/tree/bit_vector.hpp"
+#include "../tree/bit_vector.hpp"
 #include "lce.hpp"
 #include "util.hpp"
 

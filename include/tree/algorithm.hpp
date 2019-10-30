@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "../../common/util.hpp"
+#include "common/util.hpp"
 #include "amortized_lookahead.hpp"
 #include "bit_vector.hpp"
 #include "find_pss.hpp"

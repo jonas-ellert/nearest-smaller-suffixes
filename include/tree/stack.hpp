@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "../../common/util.hpp"
+#include "common/util.hpp"
 #include <cmath>
 #include <stack>
 
