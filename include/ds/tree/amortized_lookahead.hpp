@@ -29,38 +29,36 @@ namespace internal {
 
   template <typename ctx_type, typename index_type>
   xss_always_inline static void
-  pss_array_amortized_lookahead(ctx_type& ctx,
-                                const index_type j,
-                                index_type& i,
-                                index_type max_lce,
-                                const index_type distance) {
-    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
-    // copy NSS values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
-      ctx.array[i + k] = ctx.array[j + k] + distance;
-    }
-    i += anchor - 1;
-  }
+  pss_tree_amortized_lookahead(ctx_type& ctx,
+                               const index_type j,
+                               index_type& i,
+                               index_type lce,
+                               const index_type distance) {
 
-  template <typename ctx_type, typename index_type>
-  xss_always_inline static void
-  nss_array_amortized_lookahead(ctx_type& ctx,
-                                const index_type j,
-                                index_type& i,
-                                index_type max_lce,
-                                const index_type distance) {
+    bool j_smaller_i = ctx.text[j + lce] < ctx.text[i + lce];
+    const index_type anchor = get_anchor(&(ctx.text[i]), lce);
+    const uint64_t bps_distance = 2 * distance - ((j_smaller_i) ? (1) : (0));
 
-    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
-    index_type next_pss = i;
-    // copy NSS values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
-      if (ctx.array[j + k] < j + anchor) {
-        ctx.array[i + k] = ctx.array[j + k] + distance;
+    if (bps_distance <= 64)
+      return;
+
+    auto& stack = ctx.stack;
+    auto& bv = ctx.bv;
+    auto& stream = ctx.stream;
+    uint64_t bps_idx = stream.bits_written() - bps_distance;
+    uint64_t count_open = 0;
+
+    while (count_open < anchor - 1) {
+      if (bv.get(bps_idx++)) {
+        stream.append_opening_parenthesis();
+        count_open++;
+        stack.push(i + count_open);
       } else {
-        ctx.array[i + k] = next_pss;
-        next_pss = i + k;
+        stream.append_closing_parenthesis();
+        stack.pop();
       }
     }
+
     i += anchor - 1;
   }
 

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "../../common/util.hpp"
+#include "amortized_lookahead.hpp"
 #include "bit_vector.hpp"
 #include "find_pss.hpp"
 #include "run_extension.hpp"
@@ -81,8 +82,8 @@ static auto pss_tree(const value_type* text,
     const index_type distance = i - max_lce_j;
     if (xss_unlikely(max_lce >= 2 * distance))
       pss_tree_run_extension(ctx, max_lce_j, i, max_lce, distance);
-    //    else
-    //      pss_tree_amortized_lookahead(ctx, max_lce_j, i, max_lce, distance);
+    else
+      pss_tree_amortized_lookahead(ctx, max_lce_j, i, max_lce, distance);
   }
 
   while (stack.top() > 0) {
