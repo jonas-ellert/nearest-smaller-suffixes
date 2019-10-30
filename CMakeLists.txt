@@ -70,6 +70,27 @@ print(STATUS "Adding xss includes...")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
+print(STATUS "Adding sdsl-lite as an external project...")
+include(ExternalProject)
+ExternalProject_Add(
+        fetch_sdsl PREFIX benchmark/sdsl
+        GIT_REPOSITORY https://github.com/simongog/sdsl-lite
+        GIT_TAG ddb0fbbc33bb183baa616f17eb48e261ac2a3672 # 1.8.1
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        UPDATE_COMMAND ""
+        EXCLUDE_FROM_ALL 1
+)
+print(STATUS "Adding include directory for sdsl, divsufsort, and gtest...")
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/benchmark/sdsl/include)
+set(SDSL_LIB_PATH ${CMAKE_CURRENT_BINARY_DIR}/benchmark/sdsl/lib)
+
+print(STATUS "Adding libraries for sdsl, divsufsort, and gtest...")
+find_library(gtest ${SDSL_LIB_PATH}/libgtest.a)
+find_library(gtest_main ${SDSL_LIB_PATH}/libgtest_main.a)
+find_library(divsufsort ${SDSL_LIB_PATH}/libdivsufsort.a)
+find_library(divsufsort64 ${SDSL_LIB_PATH}/libdivsufsort64.a)
+find_library(sdsl ${SDSL_LIB_PATH}/libsdsl.a)
+
 add_subdirectory(benchmark/test)
 add_subdirectory(benchmark/src)
 

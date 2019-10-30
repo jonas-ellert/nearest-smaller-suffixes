@@ -15,18 +15,6 @@ ExternalProject_Add(
 )
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/tlx/include)
 
-print(STATUS "    Adding divsufsort as external project...")
-include(ExternalProject)
-ExternalProject_Add(
-        fetch_divsufsort PREFIX external/divsufsort
-        GIT_REPOSITORY https://github.com/y-256/libdivsufsort
-        GIT_TAG 5f60d6f026c30fb4ac296f696b3c8b0eb71bd428
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_DIVSUFSORT64=ON
-        UPDATE_COMMAND ""
-        EXCLUDE_FROM_ALL 1
-)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/divsufsort/include)
-
 print(STATUS "    Adding malloc_count libraries and includes...")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
 add_library(malloc_count ${BENCHMARK_SRC_DIR}/external/malloc_count/malloc_count.c)
@@ -41,8 +29,6 @@ endforeach()
 
 print(STATUS "    Adding benchmark target...")
 add_executable(benchmark ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.cpp)
-add_dependencies(benchmark fetch_tlx fetch_divsufsort)
-target_link_libraries(benchmark stdc++fs malloc_count rt dl
-        ${CMAKE_CURRENT_BINARY_DIR}/external/tlx/lib/libtlx.a
-        ${CMAKE_CURRENT_BINARY_DIR}/external/divsufsort/lib/libdivsufsort.so
-        ${CMAKE_CURRENT_BINARY_DIR}/external/divsufsort/lib/libdivsufsort64.so)
+add_dependencies(benchmark fetch_tlx fetch_sdsl)
+target_link_libraries(benchmark stdc++fs malloc_count rt dl divsufsort divsufsort64 sdsl
+        ${CMAKE_CURRENT_BINARY_DIR}/external/tlx/lib/libtlx.a)

@@ -1,16 +1,3 @@
-print(STATUS "    Adding gtest as external project...")
-
-include(ExternalProject)
-ExternalProject_Add(
-        fetch_gtest PREFIX external/gtest
-        GIT_REPOSITORY https://github.com/google/googletest
-        GIT_TAG 37f322783175a66c11785d17fc153477b0777753 # 1.8.1
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        UPDATE_COMMAND ""
-        EXCLUDE_FROM_ALL 1
-)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/gtest/include)
-
 print(STATUS "    List of include directories:")
 get_property(all_include_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${all_include_dirs})
@@ -31,11 +18,9 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stamps)
 macro(run_test test_target)
     add_executable(${test_target}_testrunner EXCLUDE_FROM_ALL ${test_target}.cpp)
 
-    add_dependencies(${test_target}_testrunner fetch_gtest)
+    add_dependencies(${test_target}_testrunner fetch_sdsl)
 
-    target_link_libraries(${test_target}_testrunner stdc++fs rt dl
-            ${CMAKE_CURRENT_BINARY_DIR}/external/gtest/lib/libgtest.a
-            ${CMAKE_CURRENT_BINARY_DIR}/external/gtest/lib/libgtest_main.a)
+    target_link_libraries(${test_target}_testrunner stdc++fs rt dl gtest gtest_main)
 
     # Runs the test and generates a stamp file on success.
     add_custom_command(
