@@ -32,6 +32,7 @@ private:
   uint64_t n_words_;
   uint64_t n_bytes_;
   uint64_t* data_;
+  uint64_t* delete_data_;
 
   xss_always_inline static uint64_t mod64(const uint64_t idx) {
     return idx - ((idx >> 6) << 6);
@@ -42,7 +43,8 @@ public:
       : n_bits_(n),
         n_words_((n_bits_ + 127) >> 6),
         n_bytes_(n_words_ << 3),
-        data_(static_cast<uint64_t*>(malloc(n_bytes_))) {}
+        data_(static_cast<uint64_t*>(malloc(n_bytes_))),
+        delete_data_(data_) {}
 
   bit_vector(const uint64_t n, bool default_value) : bit_vector(n) {
     if (default_value)
@@ -50,6 +52,13 @@ public:
     else
       memset(data_, 0, n_bytes_);
   }
+
+  bit_vector(uint64_t* data, uint64_t n)
+      : n_bits_(n),
+        n_words_((n_bits_ + 63) >> 6),
+        n_bytes_(n_words_ << 3),
+        data_(data),
+        delete_data_(nullptr){};
 
   xss_always_inline void set_one(const uint64_t idx) {
     data_[idx >> 6] |= 1ULL << mod64(idx);
@@ -79,8 +88,12 @@ public:
     return data_;
   }
 
+  const uint64_t* data() const {
+    return data_;
+  }
+
   ~bit_vector() {
-    delete data_;
+    delete delete_data_;
   }
 
   bit_vector& operator=(bit_vector&& other) {

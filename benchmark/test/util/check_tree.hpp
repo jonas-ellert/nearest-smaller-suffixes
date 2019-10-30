@@ -23,6 +23,8 @@
 #include "check_array.hpp"
 #include <gtest/gtest.h>
 
+#include <ds/tree/support/pss_tree_support_naive.hpp>
+
 template <bool abort_on_error = true,
           bool report_input_text_on_error = true,
           uint64_t max_text_output_characters = 1ULL * 1024,
@@ -41,18 +43,20 @@ struct check_tree {
     EXPECT_EQ(bps.get(1), true);
     EXPECT_EQ(bps.get(bps.size() - 2), false);
     EXPECT_EQ(bps.get(bps.size() - 1), false);
+
+    xss::pss_tree_support_naive support(bps.data(), bps.size());
+
     std::vector<uint64_t> pss(text.size());
-    pss[0] = pss[text.size() - 1] = text.size();
-    uint64_t text_i = 1;
-    uint64_t text_j = 0;
-    for (uint64_t bps_i = 2; bps_i < bps.size() - 2; ++bps_i) {
-      if (!bps.get(bps_i)) {
-        text_j = pss[text_j];
-      } else {
-        pss[text_i] = text_j;
-        text_j = text_i++;
-      }
+    std::vector<uint64_t> nss(text.size());
+    for (uint64_t i = 1; i < text.size() - 1; ++i) {
+      pss[i] = support.pss(i);
+      nss[i] = support.nss(i);
     }
+    pss[0] = pss[text.size() - 1] = text.size();
+    nss[0] = text.size() - 1;
+    nss[text.size() - 1] = text.size();
+
     check_array_type::check_pss(text, pss);
+    check_array_type::check_nss(text, nss);
   }
 };
