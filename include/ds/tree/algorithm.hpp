@@ -30,15 +30,16 @@
 namespace xss {
 
 template <typename index_type = uint64_t, typename value_type>
-static auto pss_tree(const value_type* text,
+static void pss_tree(const value_type* text,
                      const uint64_t n,
+                     uint64_t* result_data,
                      uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
   using stack_type = buffered_stack<telescope_stack, index_type>;
   warn_type_width<index_type>(n, "xss::pss_tree");
   fix_threshold(threshold);
 
-  bit_vector result((n << 1) + 2);
+  bit_vector result(result_data, (n << 1) + 2);
   parentheses_stream stream(result);
   stack_type stack(n >> 3, telescope_stack());
   tree_context_type<stack_type, index_type, value_type> ctx{
@@ -94,7 +95,14 @@ static auto pss_tree(const value_type* text,
   stream.append_opening_parenthesis();
   stream.append_closing_parenthesis();
   stream.append_closing_parenthesis();
+}
 
+template <typename index_type = uint64_t, typename value_type>
+static auto pss_tree(const value_type* text,
+                     const uint64_t n,
+                     uint64_t threshold = internal::DEFAULT_THRESHOLD) {
+  bit_vector result((n << 1) + 2);
+  pss_tree(text, n, result.data(), threshold);
   return result;
 }
 

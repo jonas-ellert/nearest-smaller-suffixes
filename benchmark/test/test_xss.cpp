@@ -28,6 +28,7 @@
 #include "strings/test_runs.hpp"
 #include "util/check_array.hpp"
 #include "util/check_tree.hpp"
+#include <sdsl/bit_vectors.hpp>
 
 constexpr static uint64_t min_n = 64;
 constexpr static uint64_t max_n = 128ULL * 1024;
@@ -75,9 +76,12 @@ static void instance_tests(instance_collection&& instances) {
       check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
       check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
     } else {
-      check_type::check_bps(t, xss::pss_tree(t.data(), t.size()));
+      sdsl::bit_vector bv(2 * t.size() + 2);
+      xss::pss_tree(t.data(), t.size(), bv.data());
+      check_type::check_bps(t, bv);
       std::reverse(t.begin(), t.end());
-      check_type::check_bps(t, xss::pss_tree(t.data(), t.size()));
+      xss::pss_tree(t.data(), t.size(), bv.data());
+      check_type::check_bps(t, bv);
     }
   };
 
@@ -188,33 +192,33 @@ TEST(tree, random) {
 }
 
 TEST(dummy, dummy) {
-  std::cout << "Hello Test!" << std::endl;
-  std::string teststr = "$northamerica$";
-  auto strptr = teststr.data();
-  std::cout << teststr << " --- Length: " << teststr.size() << std::endl;
-  auto p = xss::pss_array(strptr, teststr.size());
-  std::cout << "PSS Array: ";
-  for (auto val : p) {
-    std::cout << val << ", ";
-  }
-  std::cout << std::endl;
-  auto n = xss::nss_array(strptr, teststr.size());
-  std::cout << "NSS Array: ";
-  for (auto val : n) {
-    std::cout << val << ", ";
-  }
-  std::cout << std::endl;
-  auto l = xss::lyndon_array(strptr, teststr.size());
-  std::cout << "Lyn Array: ";
-  for (auto val : l) {
-    std::cout << val << ", ";
-  }
-  std::cout << std::endl;
-
-  check_array<>::check_nss(teststr, n);
-  check_array<>::check_pss(teststr, p);
-
-  auto bps = xss::pss_tree(strptr, teststr.size());
-  std::cout << "PSS Tree: " << bps << std::endl;
-  check_tree<>::check_bps(teststr, bps);
+  //  std::cout << "Hello Test!" << std::endl;
+  //  std::string teststr = "$northamerica$";
+  //  auto strptr = teststr.data();
+  //  std::cout << teststr << " --- Length: " << teststr.size() << std::endl;
+  //  auto p = xss::pss_array(strptr, teststr.size());
+  //  std::cout << "PSS Array: ";
+  //  for (auto val : p) {
+  //    std::cout << val << ", ";
+  //  }
+  //  std::cout << std::endl;
+  //  auto n = xss::nss_array(strptr, teststr.size());
+  //  std::cout << "NSS Array: ";
+  //  for (auto val : n) {
+  //    std::cout << val << ", ";
+  //  }
+  //  std::cout << std::endl;
+  //  auto l = xss::lyndon_array(strptr, teststr.size());
+  //  std::cout << "Lyn Array: ";
+  //  for (auto val : l) {
+  //    std::cout << val << ", ";
+  //  }
+  //  std::cout << std::endl;
+  //
+  //  check_array<>::check_nss(teststr, n);
+  //  check_array<>::check_pss(teststr, p);
+  //
+  //  auto bps = xss::pss_tree(strptr, teststr.size());
+  //  std::cout << "PSS Tree: " << bps << std::endl;
+  //  check_tree<>::check_bps(teststr, bps);
 }

@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 
 #include <ds/tree/support/pss_tree_support_naive.hpp>
+#include <ds/tree/support/pss_tree_support_sdsl.hpp>
 
 template <bool abort_on_error = true,
           bool report_input_text_on_error = true,
@@ -36,15 +37,15 @@ struct check_tree {
                                        max_text_output_characters,
                                        max_index_reports_per_check>;
 
-  template <typename vec_type, typename tree_type>
-  inline static void check_bps(const vec_type& text, const tree_type& bps) {
-    EXPECT_EQ(text.size() * 2 + 2, bps.size());
-    EXPECT_EQ(bps.get(0), true);
-    EXPECT_EQ(bps.get(1), true);
-    EXPECT_EQ(bps.get(bps.size() - 2), false);
-    EXPECT_EQ(bps.get(bps.size() - 1), false);
+  template <typename vec_type>
+  inline static void check_bps(const vec_type& text,
+                               const sdsl::bit_vector& bps) {
+    EXPECT_EQ(bps[0], true);
+    EXPECT_EQ(bps[1], true);
+    EXPECT_EQ(bps[bps.size() - 2], false);
+    EXPECT_EQ(bps[bps.size() - 1], false);
 
-    xss::pss_tree_support_naive support(bps.data(), bps.size());
+    xss::pss_tree_support_naive support(bps);
 
     std::vector<uint64_t> pss(text.size());
     std::vector<uint64_t> nss(text.size());
@@ -58,5 +59,11 @@ struct check_tree {
 
     check_array_type::check_pss(text, pss);
     check_array_type::check_nss(text, nss);
+
+    xss::pss_tree_support_sdsl support2(bps);
+    for (uint64_t i = 1; i < text.size() - 1; ++i) {
+      EXPECT_EQ(pss[i], support2.pss(i));
+      EXPECT_EQ(nss[i], support2.nss(i));
+    }
   }
 };

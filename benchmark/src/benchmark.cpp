@@ -1,4 +1,4 @@
-#include <xss.hpp>
+#include <xss_sdsl.hpp>
 
 #include <divsufsort.h>
 #include <divsufsort64.h>
@@ -88,10 +88,20 @@ int main(int argc, char const* argv[]) {
     const std::string info =
         std::string("file=") + file + " sigma=" + std::to_string(sigma);
 
-    if (s.matches("pss-tree")) {
+    if (s.matches("pss-tree-plain")) {
       auto runner = [&]() { xss::pss_tree(text_vec.data(), text_vec.size()); };
-      run_generic("pss-tree", info, text_vec.size() - 2, s.number_of_runs, 2,
-                  runner);
+      run_generic("pss-tree-plain", info, text_vec.size() - 2, s.number_of_runs,
+                  2, runner);
+    }
+
+    if (s.matches("pss-tree-support")) {
+      auto runner = [&]() {
+        sdsl::bit_vector bv(2 * text_vec.size() + 2);
+        xss::pss_tree(text_vec.data(), text_vec.size(), bv.data());
+        auto support = xss::pss_tree_support_sdsl(bv);
+      };
+      run_generic("pss-tree-support", info, text_vec.size() - 2,
+                  s.number_of_runs, 2, runner);
     }
 
     if (s.matches("lyndon-array32")) {
