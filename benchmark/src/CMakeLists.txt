@@ -20,6 +20,9 @@ print(STATUS "    Adding malloc_count libraries and includes...")
 add_library(malloc_count ${BENCHMARK_SRC_DIR}/external/malloc_count/malloc_count.c)
 include_directories(${BENCHMARK_SRC_DIR}/external/malloc_count)
 
+print(STATUS "    Adding benchmark includes...")
+include_directories(${BENCHMARK_SRC_DIR}/include)
+
 print(STATUS "    List of include directories:")
 get_property(all_include_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${all_include_dirs})

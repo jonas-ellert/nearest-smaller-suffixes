@@ -7,21 +7,10 @@ function(print TYPE TEXT)
     message(${TYPE} "${Esc}[1m${Esc}[36m[XSS]${Esc}[m ${Esc}[1m${TEXT}${Esc}[m")
 endfunction()
 print(STATUS "")
+print(STATUS "Executing CMakeList.txt in directory ${CMAKE_CURRENT_SOURCE_DIR}...")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
-
-# Default to Release build
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-endif()
-print(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 # REQUIRE G++/GCC 7.3
 # Require G++ version
@@ -44,6 +33,30 @@ else()
 endif()
 print(STATUS "gcc version: ${CMAKE_C_COMPILER_VERSION}")
 
+
+print(STATUS "")
+print(STATUS "Adding xss includes...")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+if (NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    print(STATUS "Using xss in another project.")
+    print(STATUS "Leaving directory ${CMAKE_CURRENT_SOURCE_DIR}...")
+    return()
+endif()
+
+
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
+# Default to Release build
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+print(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
 # Compiler flags         -Winline \ -Wno-error=inline \
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
         -fopenmp \
@@ -62,13 +75,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} \
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
         -O0 \
         -ggdb")
-
-
-print(STATUS "")
-
-print(STATUS "Adding xss includes...")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
 print(STATUS "Adding sdsl-lite as an external project...")
 include(ExternalProject)
