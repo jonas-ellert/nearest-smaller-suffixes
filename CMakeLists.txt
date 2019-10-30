@@ -38,12 +38,13 @@ print(STATUS "")
 print(STATUS "Adding xss includes...")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if (NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-    print(STATUS "Using xss in another project.")
+option(STANDALONE "Build the benchmark tool and tests." ON)
+
+if (NOT ${STANDALONE})
+    print(STATUS "Project not configured as standalone.")
     print(STATUS "Leaving directory ${CMAKE_CURRENT_SOURCE_DIR}...")
     return()
 endif()
-
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
