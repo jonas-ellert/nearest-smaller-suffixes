@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <sdsl/bp_support_sada.hpp>
 #include "../../common/util.hpp"
+#include <sdsl/bp_support_sada.hpp>
 
 namespace xss {
 

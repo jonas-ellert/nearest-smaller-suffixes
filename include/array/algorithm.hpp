@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include "common/util.hpp"
 #include "amortized_lookahead.hpp"
 #include "common/context.hpp"
+#include "common/util.hpp"
 #include "find_pss.hpp"
 #include "run_extension.hpp"
 
