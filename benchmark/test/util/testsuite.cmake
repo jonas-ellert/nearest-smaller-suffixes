@@ -20,7 +20,7 @@ macro(run_test test_target)
 
     add_dependencies(${test_target}_testrunner fetch_sdsl)
 
-    target_link_libraries(${test_target}_testrunner stdc++fs rt dl gtest gtest_main sdsl)
+    target_link_libraries(${test_target}_testrunner stdc++fs rt dl ${gtest} ${gtest_main} ${sdsl})
 
     # Runs the test and generates a stamp file on success.
     add_custom_command(
