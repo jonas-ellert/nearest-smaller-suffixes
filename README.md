@@ -12,7 +12,7 @@ auto text_ptr = text.data();
 auto n = text.size();
 
 // use uint64_t if n is larger than std::numeric_limits<uint32_t>::max();
-std::vector<uint32_t> nss = xss::pss_array<uint32_t>(text_ptr, n);
+std::vector<uint32_t> nss = xss::nss_array<uint32_t>(text_ptr, n);
 std::vector<uint32_t> pss = xss::pss_array<uint32_t>(text_ptr, n);
 ```
 
