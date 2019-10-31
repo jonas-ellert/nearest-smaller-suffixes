@@ -54,7 +54,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
         -fdiagnostics-color=auto \
         --param large-function-growth=10000 \
         --param inline-unit-growth=1000 \
-        -fconstexpr-loop-limit=4194304")
+        #-fconstexpr-loop-limit=4194304 \
+        ")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} \
         -O3 \
         -ffast-math \
