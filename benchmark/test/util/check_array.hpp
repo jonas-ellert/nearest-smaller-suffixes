@@ -81,16 +81,14 @@ struct check_array {
                                        uint64_t& error_count) {
 #pragma omp critical(report_xss_failure)
     {
-      if (!abort_on_error || error_count == 0) {
-        if (error_count < max_index_reports_per_check)
-          std::cout << "\nWrong result for xss(" << i << "): Reported value is "
-                    << xss_i << ", but actual value is " << j << "."
-                    << std::flush;
-        else if (error_count == max_index_reports_per_check)
-          std::cout << "\n[reached maximum number of error reports]"
-                    << std::flush;
-        ++error_count;
-      }
+      if (error_count < max_index_reports_per_check)
+        std::cout << "\nWrong result for xss(" << i << "): Reported value is "
+                  << xss_i << ", but actual value is " << j << "."
+                  << std::flush;
+      else if (error_count == max_index_reports_per_check)
+        std::cout << "\n[reached maximum number of error reports]"
+                  << std::flush;
+      ++error_count;
       abort_after_error_report(text);
     }
   }
@@ -103,16 +101,14 @@ struct check_array {
                                       uint64_t& error_count) {
 #pragma omp critical(report_xss_failure)
     {
-      if (!abort_on_error || error_count == 0) {
-        if (error_count < max_index_reports_per_check)
-          std::cout << "\nWrong result for xss(" << i << "): Reported value is "
-                    << xss_i << ", but actual value is further away."
-                    << std::flush;
-        else if (error_count == max_index_reports_per_check)
-          std::cout << "\n[reached maximum number of error reports]"
-                    << std::flush;
-        ++error_count;
-      }
+      if (error_count < max_index_reports_per_check)
+        std::cout << "\nWrong result for xss(" << i << "): Reported value is "
+                  << xss_i << ", but actual value is further away."
+                  << std::flush;
+      else if (error_count == max_index_reports_per_check)
+        std::cout << "\n[reached maximum number of error reports]"
+                  << std::flush;
+      ++error_count;
       abort_after_error_report(text);
     }
   }
@@ -125,6 +121,7 @@ struct check_array {
 #pragma omp parallel for
     for (uint64_t i = 1; i < text.size() - 1; ++i) {
       const auto pss = pss_array[i];
+      EXPECT_LT(pss, i);
       for (uint64_t j = i - 1; j > pss; --j) {
         if (xss_unlikely(is_smaller(text, j, i))) {
           report_missed_xss(text, i, j, pss, error_count);
@@ -151,7 +148,7 @@ struct check_array {
 #pragma omp parallel for
     for (uint64_t i = 1; i < text.size() - 1; ++i) {
       const auto nss = nss_array[i];
-
+      EXPECT_GT(nss, i);
       for (uint64_t j = i + 1; j < nss; ++j) {
         if (xss_unlikely(is_smaller(text, j, i))) {
           report_missed_xss(text, i, j, nss, error_count);
