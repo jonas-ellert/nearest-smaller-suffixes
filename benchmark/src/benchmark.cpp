@@ -75,6 +75,10 @@ int main(int argc, char const* argv[]) {
     std::cout << "    "
               << "pss-array" << std::endl;
     std::cout << "    "
+              << "pss-and-lyndon-array" << std::endl;
+    std::cout << "    "
+              << "pss-and-nss-array" << std::endl;
+    std::cout << "    "
               << "pss-tree" << std::endl;
     std::cout << "    "
               << "divsufsort" << std::endl;
@@ -128,6 +132,22 @@ int main(int argc, char const* argv[]) {
                   32, runner);
     }
 
+    if (s.matches("pss-and-lyndon-array32")) {
+      auto runner = [&]() {
+          xss::pss_and_lyndon_array<uint32_t>(text_vec.data(), text_vec.size());
+      };
+      run_generic("pss-and-lyndon-array32", info, text_vec.size() - 2, s.number_of_runs,
+                  64, runner);
+    }
+
+    if (s.matches("pss-and-nss-array32")) {
+      auto runner = [&]() {
+          xss::pss_and_nss_array<uint32_t>(text_vec.data(), text_vec.size());
+      };
+      run_generic("pss-and-nss-array32", info, text_vec.size() - 2, s.number_of_runs,
+                  64, runner);
+    }
+
     if (s.matches("lyndon-isa-nsv32")) {
       auto runner = [&]() {
         lyndon_isa_nsv<uint32_t>(&(text_vec.data()[1]), text_vec.size() - 1);
@@ -169,6 +189,22 @@ int main(int argc, char const* argv[]) {
       };
       run_generic("pss-array64", info, text_vec.size() - 2, s.number_of_runs,
                   64, runner);
+    }
+
+    if (s.matches("pss-and-lyndon-array64")) {
+      auto runner = [&]() {
+          xss::pss_and_lyndon_array<uint64_t>(text_vec.data(), text_vec.size());
+      };
+      run_generic("pss-and-lyndon-array64", info, text_vec.size() - 2, s.number_of_runs,
+                  128, runner);
+    }
+
+    if (s.matches("pss-and-nss-array64")) {
+      auto runner = [&]() {
+          xss::pss_and_nss_array<uint64_t>(text_vec.data(), text_vec.size());
+      };
+      run_generic("pss-and-nss-array64", info, text_vec.size() - 2, s.number_of_runs,
+                  128, runner);
     }
 
     if (s.matches("lyndon-isa-nsv64")) {
