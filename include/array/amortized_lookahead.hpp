@@ -64,5 +64,26 @@ namespace internal {
     i += anchor - 1;
   }
 
+  template <typename ctx_type, typename index_type>
+  xss_always_inline static void
+  lyndon_array_amortized_lookahead(ctx_type& ctx,
+                                   const index_type j,
+                                   index_type& i,
+                                   index_type max_lce) {
+
+    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
+    index_type next_pss = i;
+    // copy NSS values up to anchor
+    for (index_type k = 1; k < anchor; ++k) {
+      if (ctx.array[j + k] + j + k < j + anchor) {
+        ctx.array[i + k] = ctx.array[j + k];
+      } else {
+        ctx.array[i + k] = next_pss;
+        next_pss = i + k;
+      }
+    }
+    i += anchor - 1;
+  }
+
 } // namespace internal
 } // namespace xss

@@ -90,5 +90,38 @@ namespace internal {
     }
   }
 
+  template <typename ctx_type, typename index_type>
+  xss_always_inline static void
+  lyndon_array_run_extension(ctx_type& ctx,
+                             const index_type j,
+                             index_type& i,
+                             index_type max_lce,
+                             const index_type period) {
+    bool j_smaller_i = ctx.text[j + max_lce] < ctx.text[i + max_lce];
+    const index_type repetitions = max_lce / period - 1;
+    const index_type new_i = i + (repetitions * period);
+
+    for (index_type k = i + 1; k < new_i; ++k) {
+      ctx.array[k] = ctx.array[k - period];
+    }
+
+    // INCREASING RUN
+    if (j_smaller_i) {
+      for (index_type r = 0; r < repetitions; ++r) {
+        i += period;
+        ctx.array[i] = i - period;
+      }
+    }
+    // DECREASING RUN
+    else {
+      const index_type pss_of_new_i = ctx.array[i];
+      for (index_type r = 0; r < repetitions; ++r) {
+        ctx.array[i] = period;
+        i += period;
+      }
+      ctx.array[i] = pss_of_new_i;
+    }
+  }
+
 } // namespace internal
 } // namespace xss

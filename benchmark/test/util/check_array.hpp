@@ -140,9 +140,9 @@ struct check_array {
     }
   }
 
-  template <typename vec_type, typename pss_type>
+  template <typename vec_type, typename nss_type>
   inline static void check_nss(const vec_type& text,
-                               const pss_type& nss_array) {
+                               const nss_type& nss_array) {
     uint64_t error_count = 0;
 
 #pragma omp parallel for
@@ -159,6 +159,36 @@ struct check_array {
       }
     }
 
+    if (error_count > zero_errors) {
+      report_text(text);
+      std::cout << std::endl;
+      EXPECT_EQ(error_count, zero_errors);
+      std::cout << std::endl;
+    }
+  }
+
+  template <typename vec_type, typename nss_type, typename lyndon_type>
+  inline static void check_nss_vs_lyndon(const vec_type& text,
+                                         const nss_type& nss_array,
+                                         const lyndon_type& lyndon_array) {
+    uint64_t error_count = 0;
+
+#pragma omp parallel for
+    for (uint64_t i = 1; i < text.size() - 1; ++i) {
+      if (i + lyndon_array[i] != nss_array[i]) {
+#pragma omp critical(report_xss_failure)
+        {
+          if (error_count < max_index_reports_per_check)
+            std::cout << "\nnss(" << i << ") = " << nss_array[i] << ", but "
+                      << i << " + lyndon(" << i << ") = " << i + lyndon_array[i]
+                      << "." << std::flush;
+          else if (error_count == max_index_reports_per_check)
+            std::cout << "\n[reached maximum number of error reports]"
+                      << std::flush;
+          ++error_count;
+        }
+      }
+    }
     if (error_count > zero_errors) {
       report_text(text);
       std::cout << std::endl;

@@ -144,29 +144,87 @@ static auto nss_array(const value_type* text,
   return result;
 }
 
-template <typename nss_type, typename index_type>
-static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
-  for (index_type i = 0; i < n; ++i) {
-    nss[i] -= i;
-  }
-  return nss;
-}
-
-template <typename lyndon_type, typename index_type>
-static lyndon_type& lyndon_to_nss(lyndon_type& lyndon, const index_type n) {
-  for (index_type i = 0; i < n; ++i) {
-    lyndon[i] += i;
-  }
-  return lyndon;
-}
-
 template <typename index_type = uint32_t, typename value_type>
 static auto lyndon_array(const value_type* text,
                          const uint64_t n,
                          uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  auto result = nss_array<index_type>(text, n, threshold);
-  nss_to_lyndon(result, n);
+  using namespace internal;
+  warn_type_width<index_type>(n, "xss::lyndon_array");
+  fix_threshold(threshold);
+
+  std::vector<index_type> result(n, 0);
+  index_type* array = result.data();
+  array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
+
+  array[0] = 0; // will be overwritten with n - 1 later
+
+  index_type j, lce;
+  for (index_type i = 1; i < n - 1; ++i) {
+    j = i - 1;
+    lce = ctx.get_lce.without_bounds(j, i);
+
+    if (xss_likely(lce < threshold)) {
+      while (text[j + lce] > text[i + lce]) {
+        index_type next_j = array[j];
+        array[j] = i - j;
+        j = next_j;
+        lce = ctx.get_lce.without_bounds(j, i);
+        if (xss_unlikely(lce > threshold))
+          break;
+      }
+
+      if (xss_likely(lce <= threshold)) {
+        array[i] = j;
+        continue;
+      }
+    }
+
+    index_type max_lce, max_lce_j, pss_of_i;
+    xss_array_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
+
+    while (j > pss_of_i) {
+      index_type next_j = array[j];
+      array[j] = i - j;
+      j = next_j;
+    }
+    array[i] = pss_of_i;
+
+
+    const index_type distance = i - max_lce_j;
+    if (xss_unlikely(max_lce >= 2 * distance))
+      lyndon_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
+    else
+      lyndon_array_amortized_lookahead(ctx, max_lce_j, i, max_lce);
+  }
+
+  // PROCESS ELEMENTS WITHOUT NSS
+  j = n - 2;
+  while (j > 0) {
+    index_type next_j = array[j];
+    array[j] = n - j - 1;
+    j = next_j;
+  }
+
+  array[0] = n - 1;
+  array[n - 1] = 1;
+
   return result;
 }
+
+//template <typename nss_type, typename index_type>
+//static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
+//  for (index_type i = 0; i < n; ++i) {
+//    nss[i] -= i;
+//  }
+//  return nss;
+//}
+//
+//template <typename lyndon_type, typename index_type>
+//static lyndon_type& lyndon_to_nss(lyndon_type& lyndon, const index_type n) {
+//  for (index_type i = 0; i < n; ++i) {
+//    lyndon[i] += i;
+//  }
+//  return lyndon;
+//}
 
 } // namespace xss

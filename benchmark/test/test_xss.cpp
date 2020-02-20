@@ -50,8 +50,8 @@ template <uint64_t log_count = 16,
           typename instance_collection>
 static void instance_tests(instance_collection&& instances) {
   using check_type =
-      typename std::conditional<stype == structure_type::array,
-                                check_array_type, check_tree_type>::type;
+      typename std::conditional<stype == TEST_ARRAY, check_array_type,
+                                check_tree_type>::type;
   std::cout << "Number of instances: " << instances.size() << std::endl;
   const uint64_t logging_interval =
       (instances.size() + log_count - 2) / (log_count - 1);
@@ -69,12 +69,23 @@ static void instance_tests(instance_collection&& instances) {
                 << " and alphabet size " << (sigma - 1) << ")." << std::endl;
     }
 
-    if constexpr (stype == structure_type::array) {
-      check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
-      check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
+    if constexpr (stype == TEST_ARRAY) {
+      auto pss = xss::get<xss::PSS>(t.data(), t.size());
+      auto nss = xss::get<xss::NSS>(t.data(), t.size());
+      auto lyndon = xss::get<xss::LYNDON>(t.data(), t.size());
+      check_type::check_pss(t, pss);
+      check_type::check_nss(t, nss);
+      check_type::check_nss_vs_lyndon(t, nss, lyndon);
+
       std::reverse(t.begin(), t.end());
-      check_type::check_nss(t, xss::nss_array(t.data(), t.size()));
-      check_type::check_pss(t, xss::nss_array(t.data(), t.size()));
+
+      pss = xss::get<xss::PSS>(t.data(), t.size());
+      nss = xss::get<xss::NSS>(t.data(), t.size());
+      lyndon = xss::get<xss::LYNDON>(t.data(), t.size());
+      check_type::check_pss(t, pss);
+      check_type::check_nss(t, nss);
+      check_type::check_nss_vs_lyndon(t, nss, lyndon);
+
     } else {
       sdsl::bit_vector bv(2 * t.size() + 2);
       xss::pss_tree(t.data(), t.size(), bv.data());
