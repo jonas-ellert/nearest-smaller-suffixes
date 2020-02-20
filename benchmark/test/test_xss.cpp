@@ -70,22 +70,27 @@ static void instance_tests(instance_collection&& instances) {
     }
 
     if constexpr (stype == TEST_ARRAY) {
-      auto pss = xss::get<xss::PSS>(t.data(), t.size());
+      auto pss_and_nss = xss::get<xss::PSS, xss::NSS>(t.data(), t.size());
+      auto pss_and_lyndon = xss::get<xss::PSS, xss::LYNDON>(t.data(), t.size());
       auto nss = xss::get<xss::NSS>(t.data(), t.size());
       auto lyndon = xss::get<xss::LYNDON>(t.data(), t.size());
-      check_type::check_pss(t, pss);
+      check_type::check_pss(t, pss_and_nss.first);
       check_type::check_nss(t, nss);
       check_type::check_nss_vs_lyndon(t, nss, lyndon);
+      check_type::check_nss_vs_lyndon(t, pss_and_nss.second, lyndon);
+      check_type::check_nss_vs_lyndon(t, nss, pss_and_lyndon.second);
 
       std::reverse(t.begin(), t.end());
 
-      pss = xss::get<xss::PSS>(t.data(), t.size());
+      pss_and_nss = xss::get<xss::PSS, xss::NSS>(t.data(), t.size());
+      pss_and_lyndon = xss::get<xss::PSS, xss::LYNDON>(t.data(), t.size());
       nss = xss::get<xss::NSS>(t.data(), t.size());
       lyndon = xss::get<xss::LYNDON>(t.data(), t.size());
-      check_type::check_pss(t, pss);
+      check_type::check_pss(t, pss_and_nss.first);
       check_type::check_nss(t, nss);
       check_type::check_nss_vs_lyndon(t, nss, lyndon);
-
+      check_type::check_nss_vs_lyndon(t, pss_and_nss.second, lyndon);
+      check_type::check_nss_vs_lyndon(t, nss, pss_and_lyndon.second);
     } else {
       sdsl::bit_vector bv(2 * t.size() + 2);
       xss::pss_tree(t.data(), t.size(), bv.data());

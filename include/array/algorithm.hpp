@@ -28,19 +28,45 @@
 
 namespace xss {
 
-template <typename index_type = uint32_t, typename value_type>
+template <bool build_nss = false,
+          bool build_lyndon = false,
+          typename index_type = uint32_t,
+          typename value_type>
 static auto pss_array(const value_type* text,
                       const uint64_t n,
                       uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
+
+  using res_type = typename std::conditional<
+      build_nss || build_lyndon,
+      std::pair<std::vector<index_type>, std::vector<index_type>>,
+      std::vector<index_type>>::type;
+
+  static_assert(!(build_nss && build_lyndon));
   warn_type_width<index_type>(n, "xss::pss_array");
   fix_threshold(threshold);
 
-  std::vector<index_type> result(n, 0);
-  index_type* array = result.data();
+  res_type result;
+  index_type* array;
+  index_type* aux;
+
+  if constexpr (build_nss || build_lyndon) {
+    result.first = std::vector<index_type>(n, 0);
+    result.second = std::vector<index_type>(n, 0);
+    array = result.first.data();
+    aux = result.second.data();
+  } else {
+    result = std::vector<index_type>(n, 0);
+    array = result.data();
+  }
+
   array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
 
   array[0] = 0; // will be overwritten with n later
+  if constexpr (build_nss || build_lyndon) {
+    aux[0] = n - 1;
+    ctx.aux = aux;
+  }
 
   index_type j, lce;
   for (index_type i = 1; i < n - 1; ++i) {
@@ -49,6 +75,10 @@ static auto pss_array(const value_type* text,
 
     if (xss_likely(lce <= threshold)) {
       while (text[j + lce] > text[i + lce]) {
+        if constexpr (build_nss)
+          aux[j] = i;
+        if constexpr (build_lyndon)
+          aux[j] = i - j;
         j = array[j];
         lce = ctx.get_lce.without_bounds(j, i);
         if (xss_unlikely(lce > threshold))
@@ -63,19 +93,59 @@ static auto pss_array(const value_type* text,
 
     index_type max_lce, max_lce_j, pss_of_i;
     xss_array_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
+
+    if constexpr (build_nss || build_lyndon) {
+      while (j > pss_of_i) {
+        if constexpr (build_nss)
+          aux[j] = i;
+        if constexpr (build_lyndon)
+          aux[j] = i - j;
+        j = array[j];
+      }
+    }
+
     array[i] = pss_of_i;
 
     const index_type distance = i - max_lce_j;
     if (xss_unlikely(max_lce >= 2 * distance))
-      pss_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
+      pss_array_run_extension<build_nss, build_lyndon>(ctx, max_lce_j, i,
+                                                       max_lce, distance);
     else
-      pss_array_amortized_lookahead(ctx, max_lce_j, i, max_lce, distance);
+      pss_array_amortized_lookahead<build_nss, build_lyndon>(ctx, max_lce_j, i,
+                                                             max_lce, distance);
   }
 
   // PSS does not exist <=> pss[i] = n
   array[0] = array[n - 1] = n;
 
+  if constexpr (build_nss || build_lyndon) {
+    j = n - 2;
+    while (j > 0) {
+      if constexpr (build_nss)
+        aux[j] = n - 1;
+      if constexpr (build_lyndon)
+        aux[j] = n - j - 1;
+      j = array[j];
+    }
+  }
+
   return result;
+}
+
+template <typename index_type = uint32_t, typename value_type>
+static auto
+pss_and_nss_array(const value_type* text,
+                  const uint64_t n,
+                  uint64_t threshold = internal::DEFAULT_THRESHOLD) {
+  return pss_array<true>(text, n, threshold);
+}
+
+template <typename index_type = uint32_t, typename value_type>
+static auto
+pss_and_lyndon_array(const value_type* text,
+                     const uint64_t n,
+                     uint64_t threshold = internal::DEFAULT_THRESHOLD) {
+  return pss_array<false, true>(text, n, threshold);
 }
 
 template <typename index_type = uint32_t, typename value_type>
@@ -189,7 +259,6 @@ static auto lyndon_array(const value_type* text,
     }
     array[i] = pss_of_i;
 
-
     const index_type distance = i - max_lce_j;
     if (xss_unlikely(max_lce >= 2 * distance))
       lyndon_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
@@ -211,16 +280,16 @@ static auto lyndon_array(const value_type* text,
   return result;
 }
 
-//template <typename nss_type, typename index_type>
-//static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
+// template <typename nss_type, typename index_type>
+// static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
 //  for (index_type i = 0; i < n; ++i) {
 //    nss[i] -= i;
 //  }
 //  return nss;
 //}
 //
-//template <typename lyndon_type, typename index_type>
-//static lyndon_type& lyndon_to_nss(lyndon_type& lyndon, const index_type n) {
+// template <typename lyndon_type, typename index_type>
+// static lyndon_type& lyndon_to_nss(lyndon_type& lyndon, const index_type n) {
 //  for (index_type i = 0; i < n; ++i) {
 //    lyndon[i] += i;
 //  }

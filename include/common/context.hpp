@@ -34,6 +34,8 @@ namespace internal {
     index_type* array;
     const index_type n;
 
+    index_type* aux = nullptr;
+
     const lce_type<index_type, value_type> get_lce =
         lce_type<index_type, value_type>{text};
   };

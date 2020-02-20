@@ -25,7 +25,10 @@
 namespace xss {
 namespace internal {
 
-  template <typename ctx_type, typename index_type>
+  template <bool build_nss,
+            bool build_lyndon,
+            typename ctx_type,
+            typename index_type>
   xss_always_inline static void
   pss_array_run_extension(ctx_type& ctx,
                           const index_type j,
@@ -38,6 +41,10 @@ namespace internal {
 
     for (index_type k = i + 1; k < new_i; ++k) {
       ctx.array[k] = ctx.array[k - period] + period;
+      if constexpr (build_nss)
+        ctx.aux[k] = ctx.aux[k - period] + period;
+      if constexpr (build_lyndon)
+        ctx.aux[k] = ctx.aux[k - period];
     }
 
     // INCREASING RUN
@@ -51,6 +58,10 @@ namespace internal {
     else {
       const index_type pss_of_new_i = ctx.array[i];
       for (index_type r = 0; r < repetitions; ++r) {
+        if constexpr (build_nss)
+          ctx.aux[i] = i + period;
+        if constexpr (build_lyndon)
+          ctx.aux[i] = period;
         i += period;
         ctx.array[i] = pss_of_new_i;
       }
