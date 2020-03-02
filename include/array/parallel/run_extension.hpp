@@ -20,33 +20,42 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iostream>
-#include <limits>
-#include <utility>
-#include <vector>
-
-#define xss_always_inline __attribute__((always_inline)) inline
-#define xss_likely(x) __builtin_expect(!!(x), 1)
-#define xss_unlikely(x) __builtin_expect(!!(x), 0)
+#include "common/util.hpp"
 
 namespace xss {
 namespace internal {
 
-  // can never be below 8
-  constexpr static uint64_t MIN_THRESHOLD = 8;
-  constexpr static uint64_t DEFAULT_THRESHOLD = 128;
+  template <typename ctx_type, typename index_type>
+  xss_always_inline static void
+  pss_array_run_extension(ctx_type& ctx,
+                          const index_type j,
+                          index_type& i,
+                          const index_type max_lce,
+                          const index_type period,
+                          const index_type upper) {
 
-  inline static void fix_threshold(uint64_t& threshold) {
-    threshold = std::max(threshold, MIN_THRESHOLD);
-  }
+    const index_type repetitions =
+        std::min(max_lce / period - 1, (upper - i) / period);
+    const index_type new_i = i + (repetitions * period);
 
-  template <typename index_type>
-  static void warn_type_width(const uint64_t n, const std::string name) {
-    if (n > std::numeric_limits<index_type>::max()) {
-      std::cerr << "WARNING: " << name << " --- n=" << n
-                << ": Given index_type of width " << sizeof(index_type)
-                << " bytes is insufficient!" << std::endl;
+    for (index_type k = i + 1; k < new_i; ++k) {
+      ctx.array[k] = ctx.array[k - period] + period;
+    }
+
+    // INCREASING RUN
+    if (ctx.text[j + max_lce] < ctx.text[i + max_lce]) {
+      for (index_type r = 0; r < repetitions; ++r) {
+        i += period;
+        ctx.array[i] = i - period;
+      }
+    }
+    // DECREASING RUN
+    else {
+      const index_type pss_of_new_i = ctx.array[i];
+      for (index_type r = 0; r < repetitions; ++r) {
+        i += period;
+        ctx.array[i] = pss_of_new_i;
+      }
     }
   }
 

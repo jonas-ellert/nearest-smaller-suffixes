@@ -20,7 +20,8 @@
 
 #pragma once
 
-#include "array/algorithm.hpp"
+#include "array/parallel/algorithm.hpp"
+#include "array/sequential/algorithm.hpp"
 #include "tree/algorithm.hpp"
 #include "tree/support/pss_tree_support_naive.hpp"
 

@@ -15,7 +15,19 @@ struct {
   uint64_t prefix_size = 0;
   std::string contains = "";
   std::string not_contains = "";
+  std::string list_of_cores = "1,2,4,8,16";
   bool list = false;
+
+  bool matches_cores(const uint64_t cores) const {
+    std::stringstream c(list_of_cores);
+    while (c.good()) {
+      std::string c_sub;
+      getline(c, c_sub, ',');
+      if (c_sub == std::to_string(cores))
+        return true;
+    }
+    return false;
+  }
 
   bool matches(const std::string algo) const {
     std::stringstream c(contains);
@@ -59,6 +71,10 @@ int main(int argc, char const* argv[]) {
   cp.add_string('\0', "not-contains", s.not_contains,
                 "Only execute algorithms that contain none of the given "
                 "strings (comma separated).");
+  cp.add_string('\0', "threads", s.list_of_cores,
+                "Execute parallel algorithms using the given number of "
+                "OMP threads (multiple options possible; comma separated, e.g. "
+                "\"1,2,4,8\").");
 
   cp.add_flag('\0', "list", s.list, "List the available algorithms.");
 
@@ -132,20 +148,55 @@ int main(int argc, char const* argv[]) {
                   32, runner);
     }
 
+    for (int p = 1; p < 1025; ++p) {
+      if (s.matches("pss-array32-par") && s.matches_cores(p)) {
+        auto runner = [&]() {
+          xss::pss_array_parallel<uint32_t>(text_vec.data(), text_vec.size(),
+                                            p);
+        };
+        run_generic("pss-array32-par", info + " threads=" + std::to_string(p),
+                    text_vec.size() - 2, s.number_of_runs, 32, runner);
+      }
+    }
+
     if (s.matches("pss-and-lyndon-array32")) {
       auto runner = [&]() {
-          xss::pss_and_lyndon_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_lyndon_array<uint32_t>(text_vec.data(), text_vec.size());
       };
-      run_generic("pss-and-lyndon-array32", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner);
+      run_generic("pss-and-lyndon-array32", info, text_vec.size() - 2,
+                  s.number_of_runs, 64, runner);
+    }
+
+    for (int p = 1; p < 1025; ++p) {
+      if (s.matches("pss-and-lyndon-array32-par") && s.matches_cores(p)) {
+        auto runner = [&]() {
+          xss::pss_and_lyndon_array_parallel<uint32_t>(text_vec.data(),
+                                                       text_vec.size(), p);
+        };
+        run_generic("pss-and-lyndon-array32-par",
+                    info + " threads=" + std::to_string(p), text_vec.size() - 2,
+                    s.number_of_runs, 32, runner);
+      }
     }
 
     if (s.matches("pss-and-nss-array32")) {
       auto runner = [&]() {
-          xss::pss_and_nss_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_nss_array<uint32_t>(text_vec.data(), text_vec.size());
       };
-      run_generic("pss-and-nss-array32", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner);
+      run_generic("pss-and-nss-array32", info, text_vec.size() - 2,
+                  s.number_of_runs, 64, runner);
+    }
+
+    for (int p = 1; p < 1025; ++p) {
+      if (s.matches("pss-and-nss-array32-par") && s.matches_cores(p)) {
+        auto runner = [&]() {
+          xss::pss_and_nss_array_parallel<uint32_t>(text_vec.data(),
+                                                    text_vec.size(), p);
+        };
+        run_generic("pss-and-nss-array32-par",
+                    info + " threads=" + std::to_string(p), text_vec.size() - 2,
+                    s.number_of_runs, 32, runner);
+      }
     }
 
     if (s.matches("lyndon-isa-nsv32")) {
@@ -193,18 +244,18 @@ int main(int argc, char const* argv[]) {
 
     if (s.matches("pss-and-lyndon-array64")) {
       auto runner = [&]() {
-          xss::pss_and_lyndon_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_lyndon_array<uint64_t>(text_vec.data(), text_vec.size());
       };
-      run_generic("pss-and-lyndon-array64", info, text_vec.size() - 2, s.number_of_runs,
-                  128, runner);
+      run_generic("pss-and-lyndon-array64", info, text_vec.size() - 2,
+                  s.number_of_runs, 128, runner);
     }
 
     if (s.matches("pss-and-nss-array64")) {
       auto runner = [&]() {
-          xss::pss_and_nss_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_nss_array<uint64_t>(text_vec.data(), text_vec.size());
       };
-      run_generic("pss-and-nss-array64", info, text_vec.size() - 2, s.number_of_runs,
-                  128, runner);
+      run_generic("pss-and-nss-array64", info, text_vec.size() - 2,
+                  s.number_of_runs, 128, runner);
     }
 
     if (s.matches("lyndon-isa-nsv64")) {
