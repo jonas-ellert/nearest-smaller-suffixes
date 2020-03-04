@@ -57,7 +57,7 @@ static void instance_tests(instance_collection&& instances) {
     }
 
     if constexpr (stype == TEST_ARRAY) {
-      for (int i = 1; i < 17; i <<= 2) { // 1, 4, 16
+      for (int i = 1; i < 65; i <<= 2) { // 1, 4, 16, 64
         auto pss_nss =
             xss::pss_and_nss_array_parallel<uint32_t>(t.data(), t.size(), i, 0);
         check_array_type::check_pss(t, pss_nss.first);

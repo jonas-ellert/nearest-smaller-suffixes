@@ -30,6 +30,8 @@ namespace internal {
   template <typename index_type, typename value_type>
   struct array_context_type {
 
+    using get_index_type = index_type;
+
     const value_type* text;
     index_type* array;
     const index_type n;

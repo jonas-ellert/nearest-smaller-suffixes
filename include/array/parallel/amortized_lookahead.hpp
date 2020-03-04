@@ -27,7 +27,10 @@ namespace xss {
 
 namespace internal {
 
-  template <typename ctx_type, typename index_type>
+  template <bool build_nss,
+            bool build_lyndon,
+            typename ctx_type,
+            typename index_type>
   xss_always_inline static void
   pss_array_amortized_lookahead(ctx_type& ctx,
                                 const index_type j,
@@ -35,11 +38,25 @@ namespace internal {
                                 const index_type max_lce,
                                 const index_type distance,
                                 const index_type upper) {
+    static_assert(!(build_nss && build_lyndon));
     const index_type anchor =
         std::min(get_anchor(&(ctx.text[i]), max_lce), upper - i);
     // copy values up to anchor
     for (index_type k = 1; k < anchor; ++k) {
       ctx.array[i + k] = ctx.array[j + k] + distance;
+      if constexpr (build_nss || build_lyndon) {
+        index_type cur_i = i + k;
+        index_type cur_i_pss = ctx.array[cur_i];
+        index_type cur_j = i + k - 1;
+        while (cur_j > cur_i_pss) {
+          if constexpr (build_nss)
+            ctx.aux[cur_j] = cur_i;
+          if constexpr (build_lyndon){
+            ctx.aux[cur_j] = cur_i - cur_j;
+          }
+          cur_j = ctx.array[cur_j];
+        }
+      }
     }
     i += anchor - 1;
   }
