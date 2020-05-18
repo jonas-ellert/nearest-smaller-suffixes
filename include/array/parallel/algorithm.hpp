@@ -25,7 +25,6 @@
 #include "common/util.hpp"
 #include "run_extension.hpp"
 #include <omp.h>
-#include <stack>
 
 namespace xss {
 
@@ -69,12 +68,12 @@ namespace internal {
     index_type* aux = nullptr;
 
     if constexpr (build_nss || build_lyndon) {
-      result.first = std::vector<index_type>(n, n + 1);
-      result.second = std::vector<index_type>(n, 0); // this must be initialized with 0!
+      result.first = std::vector<index_type>(n, 0);
+      result.second = std::vector<index_type>(n, 0);
       array = result.first.data();
       aux = result.second.data();
     } else {
-      result = std::vector<index_type>(n, n + 1);
+      result = std::vector<index_type>(n, 0);
       array = result.data();
     }
 
@@ -84,8 +83,13 @@ namespace internal {
 
     const int p = std::min(
         (uint64_t)((threads > 0) ? threads : omp_num_threads()), n >> 1);
-    const index_type slice_size = (n + p - 1) / p;
 
+#pragma omp parallel for num_threads(p)
+    for (index_type i = 1; i < n - 1; ++i) {
+      array[i] = i - 1;
+    }
+
+    const index_type slice_size = (n + p - 1) / p;
 #pragma omp parallel num_threads(p)
     {
       const index_type tn = omp_get_thread_num();
@@ -93,26 +97,15 @@ namespace internal {
       const index_type upper =
           std::min((index_type) n - 1, (tn + 1) * slice_size);
 
-      index_type i, j, lce;
-
-      auto auto_lce = [&]() {
+      index_type i, j, lce, max_lce_j = 0, max_lce = 0;
+      auto update_lce = [&]() {
         lce = ctx.get_lce.without_bounds(j, i);
         if (xss_unlikely(lce >= threshold)) {
           // finish the entire iteration here!
-          index_type max_lce_j = 0, max_lce = 0;
-
           max_lce = lce;
           max_lce_j = j;
 
           while (text[j + lce] > text[i + lce]) {
-            if (xss_unlikely(array[j] > j))
-              return;
-
-            if constexpr (build_nss)
-              aux[j] = i;
-            if constexpr (build_lyndon)
-              aux[j] = i - j;
-
             j = array[j];
             lce = ctx.get_lce.without_bounds(j, i);
             if (lce >= max_lce) {
@@ -125,11 +118,11 @@ namespace internal {
           if (max_lce_j > lower) {
             const index_type distance = i - max_lce_j;
             if (max_lce >= 2 * distance) {
-              pss_array_run_extension<build_nss, build_lyndon>(
-                  ctx, max_lce_j, i, max_lce, distance, upper);
+              pss_array_run_extension(ctx, max_lce_j, i, max_lce, distance,
+                                      upper);
             } else {
-              pss_array_amortized_lookahead<build_nss, build_lyndon>(
-                  ctx, max_lce_j, i, max_lce, distance, upper);
+              pss_array_amortized_lookahead(ctx, max_lce_j, i, max_lce,
+                                            distance, upper);
             }
             j = array[i];
             lce = ctx.get_lce.without_bounds(j, i);
@@ -137,34 +130,30 @@ namespace internal {
         }
       };
 
-      auto next_j = [&]() {
-        if (xss_unlikely(array[j] > j)) {
-          index_type k = j - 1;
-          lce = ctx.get_lce.without_bounds(k, j);
-          while (text[k + lce] > text[j + lce]) {
-            // super naive solution
-            lce = ctx.get_lce.without_bounds(--k, j);
-          }
-          j = k;
-          lce = ctx.get_lce.without_bounds(j, i);
-        } else {
-          j = ctx.array[j];
-          auto_lce();
-        }
-      };
-
       for (i = lower; i < upper; ++i) {
         j = i - 1;
-        auto_lce();
+        update_lce();
         while (text[j + lce] > text[i + lce]) {
-          // set secondary array entry
+          j = array[j];
+          update_lce();
+        }
+        array[i] = j;
+      }
+    }
+
+    // now we build the secondary array
+    if constexpr (build_nss || build_lyndon) {
+      array[n - 1] = 0;
+#pragma omp parallel for num_threads(p)
+      for (index_type i = 1; i < n; ++i) {
+        index_type j = i - 1;
+        while (array[i] < j) {
           if constexpr (build_nss)
             aux[j] = i;
           if constexpr (build_lyndon)
             aux[j] = i - j;
-          next_j();
+          j = array[j];
         }
-        array[i] = j;
       }
     }
 
@@ -174,18 +163,8 @@ namespace internal {
       aux[n - 1] = n;
     if constexpr (build_lyndon)
       aux[n - 1] = 1;
-
-    if constexpr (build_nss || build_lyndon) {
+    if constexpr (build_nss || build_lyndon)
       aux[0] = n - 1;
-      index_type j = n - 2;
-      while (j > 0) {
-        if constexpr (build_nss)
-          aux[j] = n - 1;
-        if constexpr (build_lyndon)
-          aux[j] = n - j - 1;
-        j = array[j];
-      }
-    }
 
     return result;
   }

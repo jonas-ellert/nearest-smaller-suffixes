@@ -25,10 +25,7 @@
 namespace xss {
 namespace internal {
 
-  template <bool build_nss,
-            bool build_lyndon,
-            typename ctx_type,
-            typename index_type>
+  template <typename ctx_type, typename index_type>
   xss_always_inline static void
   pss_array_run_extension(ctx_type& ctx,
                           const index_type j,
@@ -36,27 +33,10 @@ namespace internal {
                           const index_type max_lce,
                           const index_type period,
                           const index_type upper) {
-    static_assert(!(build_nss && build_lyndon));
+
     const index_type repetitions =
         std::min(max_lce / period - 1, (upper - i) / period);
     const index_type new_i = i + (repetitions * period);
-
-    if constexpr (build_nss || build_lyndon) {
-      for (index_type r = i; r < new_i;) {
-        index_type k = r + 1;
-        r += period;
-//        std::stringstream ss;
-//        ss << i << " " << j << " " << max_lce << " " << period << "\n";
-        for (; k < r; ++k) {
-//          ss << k << "\n";
-          if constexpr (build_nss)
-            ctx.aux[k] = ctx.aux[k - period] + period;
-          if constexpr (build_lyndon)
-            ctx.aux[k] = ctx.aux[k - period];
-        }
-//        std::cout << ss.str() << std::flush;
-      }
-    }
 
     for (index_type k = i + 1; k < new_i; ++k) {
       ctx.array[k] = ctx.array[k - period] + period;
@@ -73,10 +53,6 @@ namespace internal {
     else {
       const index_type pss_of_new_i = ctx.array[i];
       for (index_type r = 0; r < repetitions; ++r) {
-        if constexpr (build_nss)
-          ctx.aux[i] = i + period;
-        if constexpr (build_lyndon)
-          ctx.aux[i] = period;
         i += period;
         ctx.array[i] = pss_of_new_i;
       }
