@@ -29,9 +29,8 @@ foreach(dir ${all_include_dirs})
     print(STATUS "        ${dir}")
 endforeach()
 
-
 print(STATUS "    Adding benchmark target...")
 add_executable(benchmark ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.cpp)
-add_dependencies(benchmark fetch_tlx fetch_sdsl)
-target_link_libraries(benchmark stdc++fs malloc_count rt dl ${divsufsort} ${divsufsort64} ${sdsl}
+add_dependencies(benchmark fetch_tlx fetch_sdsl pss_static)
+target_link_libraries(benchmark stdc++fs malloc_count rt dl pss_static ${divsufsort} ${divsufsort64} ${sdsl}
         ${CMAKE_CURRENT_BINARY_DIR}/external/tlx/lib/libtlx.a)

@@ -7,6 +7,23 @@
 #include <run_algorithm.hpp>
 #include <sstream>
 #include <tlx/cmdline_parser.hpp>
+#include <gsaca_pss.hpp>
+
+
+struct {
+
+  std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();
+  std::ostringstream silence;
+
+  inline void mute() {
+    std::cout.rdbuf( silence.rdbuf() );
+  }
+
+  inline void unmute() {
+    std::cout.rdbuf( oldCoutStreamBuf );
+  }
+
+} manage_cout;
 
 struct {
   std::vector<std::string> file_paths;
@@ -217,6 +234,94 @@ int main(int argc, char const* argv[]) {
       run_generic("divsufsort32", info, text_vec.size() - 2, s.number_of_runs,
                   32, runner, teardown);
     }
+
+
+
+    if (s.matches("gsaca-pss-hull-mem32")) {
+      uint32_t* sa;
+      auto runner = [&]() {
+        manage_cout.mute();
+        sa = (uint32_t*) malloc((text_vec.size() - 1) * 4);
+        gsaca_hull_mem(text_vec.data(), sa, (uint32_t)text_vec.size());
+        manage_cout.unmute();
+      };
+      auto teardown = [&]() { delete sa; };
+      run_generic("gsaca-pss-hull-mem32", info, text_vec.size() - 2, s.number_of_runs,
+                  32, runner, teardown);
+    }
+
+    if (s.matches("gsaca-pss-hull32")) {
+      uint32_t* sa;
+      auto runner = [&]() {
+        manage_cout.mute();
+        sa = (uint32_t*) malloc((text_vec.size() - 1) * 4);
+        gsaca_hull(text_vec.data(), sa, (uint32_t)text_vec.size());
+        manage_cout.unmute();
+      };
+      auto teardown = [&]() { delete sa; };
+      run_generic("gsaca-pss-hull32", info, text_vec.size() - 2, s.number_of_runs,
+                  32, runner, teardown);
+    }
+
+    if (s.matches("gsaca-pss32")) {
+      int32_t* sa;
+      auto runner = [&]() {
+        manage_cout.mute();
+        sa = (int32_t*) malloc((text_vec.size() - 1) * 4);
+        gsaca_naive(text_vec.data(), sa, (int32_t)text_vec.size());
+        manage_cout.unmute();
+      };
+      auto teardown = [&]() { delete sa; };
+      run_generic("gsaca-pss32", info, text_vec.size() - 2, s.number_of_runs,
+                  32, runner, teardown);
+    }
+
+
+    for (int p = 1; p < 1025; ++p) {
+      if (s.matches_cores(p)) {
+        omp_set_num_threads(p);
+        if (s.matches("gsaca-pss-hull32-par-fast")) {
+          uint32_t* sa;
+          auto runner = [&]() {
+            manage_cout.mute();
+            sa = (uint32_t*) malloc((text_vec.size() - 1) * 4);
+            gsaca_hull_parallel_fast(text_vec.data(), sa, (uint32_t)text_vec.size());
+            manage_cout.unmute();
+          };
+          auto teardown = [&]() { delete sa; };
+          run_generic("gsaca-pss-hull32-par-fast", info + " threads=" + std::to_string(p), text_vec.size() - 2, s.number_of_runs,
+                      32, runner, teardown);
+        }
+
+        if (s.matches("gsaca-pss-hull32-par-stable")) {
+          uint32_t* sa;
+          auto runner = [&]() {
+            manage_cout.mute();
+            sa = (uint32_t*) malloc((text_vec.size() - 1) * 4);
+            gsaca_hull_parallel_stable(text_vec.data(), sa, (uint32_t)text_vec.size());
+            manage_cout.unmute();
+          };
+          auto teardown = [&]() { delete sa; };
+          run_generic("gsaca-pss-hull32-par-stable", info + " threads=" + std::to_string(p), text_vec.size() - 2, s.number_of_runs,
+                      32, runner, teardown);
+        }
+
+        if (s.matches("gsaca-pss32-par")) {
+          uint32_t* sa;
+          auto runner = [&]() {
+            manage_cout.mute();
+            sa = (uint32_t*) malloc((text_vec.size() - 1) * 4);
+            gsaca_parallel(text_vec.data(), sa, (uint32_t)text_vec.size());
+            manage_cout.unmute();
+          };
+          auto teardown = [&]() { delete sa; };
+          run_generic("gsaca-pss32-par-stable", info + " threads=" + std::to_string(p), text_vec.size() - 2, s.number_of_runs,
+                      32, runner, teardown);
+        }
+      }
+    }
+
+
 
     if (s.matches("lyndon-array64")) {
       auto runner = [&]() {

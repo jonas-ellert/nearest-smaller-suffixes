@@ -88,6 +88,46 @@ set(divsufsort ${SDSL_LIB_PATH}/libdivsufsort.a)
 set(divsufsort64 ${SDSL_LIB_PATH}/libdivsufsort64.a)
 set(sdsl ${SDSL_LIB_PATH}/libsdsl.a)
 
+print(STATUS "    Initializing Atomic")
+include(CheckIncludeFileCXX)
+check_include_file_cxx(atomic HAVE_ATOMIC_H)
+check_include_file_cxx(cstdatomic HAVE_CSTDATOMIC_H)
+
+print(STATUS "    Initializing GMP")
+
+find_path(GMP_INCLUDE_DIR NAMES gmpxx.h)
+find_library(GMP_LIBRARIES NAMES gmp gmp)
+find_library(GMPXX_LIBRARIES NAMES gmpxx gmpxx)
+if(NOT GMP_LIBRARIES)
+    message(FATAL_ERROR "gmpxx library not found!")
+endif()
+
+message(STATUS "GMP library: " ${GMP_LIBRARIES} " " ${GMPXX_LIBRARIES})
+set(GMP_LIBRARIES ${GMPXX_LIBRARIES} ${GMP_LIBRARIES})
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GMP DEFAULT_MSG GMP_INCLUDE_DIR GMP_LIBRARIES)
+
+# check for libnuma
+print(STATUS "    Initializing NUMA")
+find_path(NUMA_INCLUDE_DIR NAMES numa.h)
+find_library(NUMA_LIBRARIES NAMES numa_available numa)
+if(NOT NUMA_LIBRARIES)
+    message(FATAL_ERROR "libnuma library not found!")
+endif()
+message(STATUS "libnuma library: " ${NUMA_LIBRARIES})
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(NUMA DEFAULT_MSG NUMA_INCLUDE_DIR NUMA_LIBRARIES)
+
+print(STATUS "    Initializing Bertram's GSACA")
+execute_process(COMMAND ./init.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/gsaca-pss/)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/gsaca-pss/gsaca-pss/pss)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/gsaca-pss/gsaca-pss/pss/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/external/gsaca-pss/gsaca-pss/src)
+#config.h
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/benchmark/external/gsaca-pss/gsaca-pss/pss)
+
 add_subdirectory(benchmark/test)
 add_subdirectory(benchmark/src)
 
