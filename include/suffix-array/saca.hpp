@@ -64,18 +64,17 @@ static auto new_saca(const value_type* text, const uint64_t n) {
   std::cout << "\n\nStart SACA..." << std::endl;
 
   timer quick_time;
-  timer total_time;
+  timer phase1_time;
 
-  total_time.begin();
+
 
   quick_time.begin();
-  auto pss_and_lyndon = pss_and_lyndon_array(text, n);
-  auto& pss = pss_and_lyndon.first;
-  auto& lyndon = pss_and_lyndon.second;
+  auto lyndon = lyndon_array(text, n);
   quick_time.end();
-  std::cout << "Computed PSS + lyndon " << quick_time.throughput_string(n)
+  std::cout << "Computed lyndon array " << quick_time.throughput_string(n)
             << std::endl;
 
+  phase1_time.begin();
   quick_time.begin();
 
   std::vector<index_type> to_sort_idx;
@@ -220,15 +219,26 @@ static auto new_saca(const value_type* text, const uint64_t n) {
   std::cout << "Computed end-links for all other positions "
             << quick_time.throughput_string(n) << std::endl;
 
-  total_time.end();
-  std::cout << "Ready for phase 2 " << total_time.throughput_string(n)
+  // delete some stuff
+  {
+    auto remove1 = std::move(to_sort_idx);
+    auto remove2 = std::move(to_sort_lyn);
+  }
+
+  phase1_time.end();
+  std::cout << "Ready for phase 2 " << phase1_time.throughput_string(n)
             << std::endl;
 
+  quick_time.begin();
+  auto pss = pss_array(text, n);
+  quick_time.end();
+  std::cout << "Computed PSS array " << quick_time.throughput_string(n)
+            << std::endl;
 
   // and now finally phase 2
+  quick_time.begin();
   auto &isa = first_occ;
   auto &sa = lyndon;
-  quick_time.begin();
   sa[0] = n-1;
   for (index_type i = 0; i < n; ++i) {
     // in case we leave the text
