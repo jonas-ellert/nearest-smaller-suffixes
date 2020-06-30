@@ -20,43 +20,46 @@
 
 #pragma once
 
-#include "common/util.hpp"
+#include "xss/common/anchor.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
+
 namespace internal {
 
   template <typename ctx_type, typename index_type>
   xss_always_inline static void
-  pss_array_run_extension(ctx_type& ctx,
-                          const index_type j,
-                          index_type& i,
-                          const index_type max_lce,
-                          const index_type period,
-                          const index_type upper) {
+  pss_tree_amortized_lookahead(ctx_type& ctx,
+                               const index_type j,
+                               index_type& i,
+                               index_type lce,
+                               const index_type distance) {
 
-    const index_type repetitions =
-        std::min(max_lce / period - 1, (upper - i) / period);
-    const index_type new_i = i + (repetitions * period);
+    bool j_smaller_i = ctx.text[j + lce] < ctx.text[i + lce];
+    const index_type anchor = get_anchor(&(ctx.text[i]), lce);
+    const uint64_t bps_distance = 2 * distance - ((j_smaller_i) ? (1) : (0));
 
-    for (index_type k = i + 1; k < new_i; ++k) {
-      ctx.array[k] = ctx.array[k - period] + period;
-    }
+    if (bps_distance <= 64)
+      return;
 
-    // INCREASING RUN
-    if (ctx.text[j + max_lce] < ctx.text[i + max_lce]) {
-      for (index_type r = 0; r < repetitions; ++r) {
-        i += period;
-        ctx.array[i] = i - period;
+    auto& stack = ctx.stack;
+    auto& bv = ctx.bv;
+    auto& stream = ctx.stream;
+    uint64_t bps_idx = stream.bits_written() - bps_distance;
+    uint64_t count_open = 0;
+
+    while (count_open < anchor - 1) {
+      if (bv.get(bps_idx++)) {
+        stream.append_opening_parenthesis();
+        count_open++;
+        stack.push(i + count_open);
+      } else {
+        stream.append_closing_parenthesis();
+        stack.pop();
       }
     }
-    // DECREASING RUN
-    else {
-      const index_type pss_of_new_i = ctx.array[i];
-      for (index_type r = 0; r < repetitions; ++r) {
-        i += period;
-        ctx.array[i] = pss_of_new_i;
-      }
-    }
+
+    i += anchor - 1;
   }
 
 } // namespace internal

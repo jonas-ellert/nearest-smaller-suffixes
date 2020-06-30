@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "common/anchor.hpp"
-#include "common/util.hpp"
+#include "xss/common/anchor.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
 

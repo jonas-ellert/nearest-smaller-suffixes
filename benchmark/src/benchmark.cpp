@@ -109,172 +109,208 @@ int main(int argc, char const* argv[]) {
         std::string("file=") + file + " sigma=" + std::to_string(sigma);
 
     if (s.matches("pss-tree-plain")) {
-      auto runner = [&]() { xss::pss_tree(text_vec.data(), text_vec.size()); };
+      xss::bit_vector bv(2 * text_vec.size() + 2);
+      auto runner = [&]() {
+        xss::pss_tree(text_vec.data(), bv.data(), text_vec.size());
+      };
+      auto teardown = [&]() { bv = xss::bit_vector(2 * text_vec.size() + 2); };
       run_generic("pss-tree-plain", info, text_vec.size() - 2, s.number_of_runs,
-                  2, runner);
+                  runner, teardown);
     }
 
     if (s.matches("pss-tree-support")) {
+      sdsl::bit_vector bv(2 * text_vec.size() + 2);
       auto runner = [&]() {
-        sdsl::bit_vector bv(2 * text_vec.size() + 2);
-        xss::pss_tree(text_vec.data(), text_vec.size(), bv.data());
+        xss::pss_tree(text_vec.data(), bv.data(), text_vec.size());
         auto support = xss::pss_tree_support_sdsl(bv);
       };
+      auto teardown = [&]() { bv = sdsl::bit_vector(2 * text_vec.size() + 2); };
       run_generic("pss-tree-support", info, text_vec.size() - 2,
-                  s.number_of_runs, 2, runner);
+                  s.number_of_runs, runner, teardown);
     }
 
     if (s.matches("lyndon-array32")) {
+      std::vector<uint32_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::lyndon_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::lyndon_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("lyndon-array32", info, text_vec.size() - 2, s.number_of_runs,
-                  32, runner);
+                  runner);
     }
 
     if (s.matches("nss-array32")) {
+      std::vector<uint32_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::nss_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::nss_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("nss-array32", info, text_vec.size() - 2, s.number_of_runs,
-                  32, runner);
+                  runner);
     }
 
     if (s.matches("pss-array32")) {
+      std::vector<uint32_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::pss_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::pss_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("pss-array32", info, text_vec.size() - 2, s.number_of_runs,
-                  32, runner);
+                  runner);
     }
 
     for (int p = 1; p < 1025; ++p) {
       if (s.matches("pss-array32-par") && s.matches_cores(p)) {
+        std::vector<uint32_t> array(text_vec.size());
         auto runner = [&]() {
-          xss::pss_array_parallel<uint32_t>(text_vec.data(), text_vec.size(),
-                                            p);
+          xss::pss_array_parallel(text_vec.data(), array.data(),
+                                  text_vec.size(), p);
         };
         run_generic("pss-array32-par", info + " threads=" + std::to_string(p),
-                    text_vec.size() - 2, s.number_of_runs, 32, runner);
+                    text_vec.size() - 2, s.number_of_runs, runner);
       }
     }
 
     if (s.matches("pss-and-lyndon-array32")) {
+      std::vector<uint32_t> array1(text_vec.size());
+      std::vector<uint32_t> array2(text_vec.size());
       auto runner = [&]() {
-        xss::pss_and_lyndon_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_lyndon_array(text_vec.data(), array1.data(), array2.data(),
+                                  text_vec.size());
       };
       run_generic("pss-and-lyndon-array32", info, text_vec.size() - 2,
-                  s.number_of_runs, 64, runner);
+                  s.number_of_runs, runner);
     }
 
     for (int p = 1; p < 1025; ++p) {
       if (s.matches("pss-and-lyndon-array32-par") && s.matches_cores(p)) {
+        std::vector<uint32_t> array1(text_vec.size());
+        std::vector<uint32_t> array2(text_vec.size());
         auto runner = [&]() {
-          xss::pss_and_lyndon_array_parallel<uint32_t>(text_vec.data(),
-                                                       text_vec.size(), p);
+          xss::pss_and_lyndon_array_parallel(text_vec.data(), array1.data(),
+                                             array2.data(), text_vec.size(), p);
         };
         run_generic("pss-and-lyndon-array32-par",
                     info + " threads=" + std::to_string(p), text_vec.size() - 2,
-                    s.number_of_runs, 32, runner);
+                    s.number_of_runs, runner);
       }
     }
 
     if (s.matches("pss-and-nss-array32")) {
+      std::vector<uint32_t> array1(text_vec.size());
+      std::vector<uint32_t> array2(text_vec.size());
       auto runner = [&]() {
-        xss::pss_and_nss_array<uint32_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_nss_array(text_vec.data(), array1.data(), array2.data(),
+                               text_vec.size());
       };
       run_generic("pss-and-nss-array32", info, text_vec.size() - 2,
-                  s.number_of_runs, 64, runner);
+                  s.number_of_runs, runner);
     }
 
     for (int p = 1; p < 1025; ++p) {
       if (s.matches("pss-and-nss-array32-par") && s.matches_cores(p)) {
+        std::vector<uint32_t> array1(text_vec.size());
+        std::vector<uint32_t> array2(text_vec.size());
         auto runner = [&]() {
-          xss::pss_and_nss_array_parallel<uint32_t>(text_vec.data(),
-                                                    text_vec.size(), p);
+          xss::pss_and_nss_array_parallel(text_vec.data(), array1.data(),
+                                          array2.data(), text_vec.size(), p);
         };
         run_generic("pss-and-nss-array32-par",
                     info + " threads=" + std::to_string(p), text_vec.size() - 2,
-                    s.number_of_runs, 32, runner);
+                    s.number_of_runs, runner);
       }
     }
 
     if (s.matches("lyndon-isa-nsv32")) {
+      std::vector<uint32_t> array(text_vec.size() - 1);
       auto runner = [&]() {
-        lyndon_isa_nsv<uint32_t>(&(text_vec.data()[1]), text_vec.size() - 1);
+        lyndon_isa_nsv(&(text_vec.data()[1]), array.data(),
+                       text_vec.size() - 1);
       };
       run_generic("lyndon-isa-nsv32", info, text_vec.size() - 2,
-                  s.number_of_runs, 32, runner);
+                  s.number_of_runs, runner);
     }
 
     if (s.matches("divsufsort32")) {
-      int32_t* sa;
+      std::vector<int32_t> sa_vec(text_vec.size() - 1);
       auto runner = [&]() {
-        sa = (int32_t*) malloc((text_vec.size() - 1) * 4);
-        divsufsort(&(text_vec.data()[1]), sa, text_vec.size() - 1);
+        divsufsort(&(text_vec.data()[1]), sa_vec.data(), text_vec.size() - 1);
       };
-      auto teardown = [&]() { delete sa; };
+      auto teardown = [&]() {
+        sa_vec.resize(0);
+        sa_vec.resize(text_vec.size() - 1);
+      };
       run_generic("divsufsort32", info, text_vec.size() - 2, s.number_of_runs,
-                  32, runner, teardown);
+                  runner, teardown);
     }
 
     if (s.matches("lyndon-array64")) {
+      std::vector<uint64_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::lyndon_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::lyndon_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("lyndon-array64", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner);
+                  runner);
     }
 
     if (s.matches("nss-array64")) {
+      std::vector<uint64_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::nss_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::nss_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("nss-array64", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner);
+                  runner);
     }
 
     if (s.matches("pss-array64")) {
+      std::vector<uint64_t> array(text_vec.size());
       auto runner = [&]() {
-        xss::pss_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::pss_array(text_vec.data(), array.data(), text_vec.size());
       };
       run_generic("pss-array64", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner);
+                  runner);
     }
 
     if (s.matches("pss-and-lyndon-array64")) {
+      std::vector<uint64_t> array1(text_vec.size());
+      std::vector<uint64_t> array2(text_vec.size());
       auto runner = [&]() {
-        xss::pss_and_lyndon_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_lyndon_array(text_vec.data(), array1.data(), array2.data(),
+                                  text_vec.size());
       };
       run_generic("pss-and-lyndon-array64", info, text_vec.size() - 2,
-                  s.number_of_runs, 128, runner);
+                  s.number_of_runs, runner);
     }
 
     if (s.matches("pss-and-nss-array64")) {
+      std::vector<uint64_t> array1(text_vec.size());
+      std::vector<uint64_t> array2(text_vec.size());
       auto runner = [&]() {
-        xss::pss_and_nss_array<uint64_t>(text_vec.data(), text_vec.size());
+        xss::pss_and_nss_array(text_vec.data(), array1.data(), array2.data(),
+                               text_vec.size());
       };
       run_generic("pss-and-nss-array64", info, text_vec.size() - 2,
-                  s.number_of_runs, 128, runner);
+                  s.number_of_runs, runner);
     }
 
     if (s.matches("lyndon-isa-nsv64")) {
+      std::vector<uint64_t> array(text_vec.size() - 1);
       auto runner = [&]() {
-        lyndon_isa_nsv<uint64_t>(&(text_vec.data()[1]), text_vec.size() - 1);
+        lyndon_isa_nsv(&(text_vec.data()[1]), array.data(),
+                       text_vec.size() - 1);
       };
       run_generic("lyndon-isa-nsv64", info, text_vec.size() - 2,
-                  s.number_of_runs, 64, runner);
+                  s.number_of_runs, runner);
     }
 
     if (s.matches("divsufsort64")) {
-      int64_t* sa;
+      std::vector<int64_t> sa_vec(text_vec.size() - 1);
       auto runner = [&]() {
-        sa = (int64_t*) malloc((text_vec.size() - 1) * 8);
-        divsufsort64(&(text_vec.data()[1]), sa, text_vec.size() - 1);
+        divsufsort64(&(text_vec.data()[1]), sa_vec.data(), text_vec.size() - 1);
       };
-      auto teardown = [&]() { delete sa; };
+      auto teardown = [&]() {
+        sa_vec.resize(0);
+        sa_vec.resize(text_vec.size() - 1);
+      };
       run_generic("divsufsort64", info, text_vec.size() - 2, s.number_of_runs,
-                  64, runner, teardown);
+                  runner, teardown);
     }
   }
 }

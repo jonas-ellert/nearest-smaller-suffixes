@@ -22,17 +22,17 @@
 
 #include "amortized_lookahead.hpp"
 #include "bit_vector.hpp"
-#include "common/util.hpp"
 #include "find_pss.hpp"
 #include "run_extension.hpp"
 #include "stack.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
 
 template <typename index_type = uint64_t, typename value_type>
-static void pss_tree(const value_type* text,
-                     const uint64_t n,
-                     uint64_t* result_data,
+static void pss_tree(value_type const* const text,
+                     uint64_t* const result_data,
+                     uint64_t const n,
                      uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
   using stack_type = buffered_stack<telescope_stack, index_type>;
@@ -74,9 +74,6 @@ static void pss_tree(const value_type* text,
     index_type max_lce = 0, max_lce_j = 0, pss_of_i = 0;
     pss_tree_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
 
-    //    std::cout << "\n" << i << " " << pss_of_i << " " << max_lce_j << " "
-    //    << max_lce << std::endl;
-
     stack.push(i);
     stream.append_opening_parenthesis();
 
@@ -95,15 +92,6 @@ static void pss_tree(const value_type* text,
   stream.append_opening_parenthesis();
   stream.append_closing_parenthesis();
   stream.append_closing_parenthesis();
-}
-
-template <typename index_type = uint64_t, typename value_type>
-static auto pss_tree(const value_type* text,
-                     const uint64_t n,
-                     uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  bit_vector result((n << 1) + 2);
-  pss_tree(text, n, result.data(), threshold);
-  return result;
 }
 
 } // namespace xss

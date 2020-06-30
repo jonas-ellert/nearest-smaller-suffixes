@@ -20,5 +20,5 @@
 
 #pragma once
 
-#include "tree/support/pss_tree_support_sdsl.hpp"
+#include "xss/tree/support/pss_tree_support_sdsl.hpp"
 #include "xss.hpp"

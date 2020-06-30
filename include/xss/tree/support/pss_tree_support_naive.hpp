@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "tree/bit_vector.hpp"
+#include "xss/tree/bit_vector.hpp"
 
 namespace xss {
 

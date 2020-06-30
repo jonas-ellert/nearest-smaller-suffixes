@@ -20,28 +20,38 @@
 
 #pragma once
 
-#include "common/anchor.hpp"
-#include "common/util.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
-
 namespace internal {
 
   template <typename ctx_type, typename index_type>
   xss_always_inline static void
-  pss_array_amortized_lookahead(ctx_type& ctx,
-                                const index_type j,
-                                index_type& i,
-                                const index_type max_lce,
-                                const index_type distance,
-                                const index_type upper) {
-    const index_type anchor =
-        std::min(get_anchor(&(ctx.text[i]), max_lce), upper - i);
-    // copy values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
-      ctx.array[i + k] = ctx.array[j + k] + distance;
+  pss_tree_run_extension(ctx_type& ctx,
+                         const index_type j,
+                         index_type& i,
+                         index_type lce,
+                         const index_type period) {
+    bool j_smaller_i = ctx.text[j + lce] < ctx.text[i + lce];
+    const uint64_t bps_distance = 2 * period - ((j_smaller_i) ? (1) : (0));
+    const index_type repetitions = lce / period - 1;
+
+    //    std::cout << "RE " << j << " " << i << " " << lce << " " <<
+    //    j_smaller_i
+    //              << " " << repetitions << " " << bps_distance << std::flush;
+
+    i += (repetitions * period);
+    if (j_smaller_i) {
+      for (uint64_t r = 0; r < repetitions; ++r) {
+        ctx.stack.push(ctx.stack.top() + period);
+      }
+    } else {
+      ctx.stack.pop();
+      ctx.stack.push(i);
     }
-    i += anchor - 1;
+
+    ctx.stream.append_copy(bps_distance, bps_distance * repetitions);
+    //    std::cout << " DONE. next i: " << i << std::endl;
   }
 
 } // namespace internal

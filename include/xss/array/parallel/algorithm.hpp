@@ -21,9 +21,9 @@
 #pragma once
 
 #include "amortized_lookahead.hpp"
-#include "common/context.hpp"
-#include "common/util.hpp"
 #include "run_extension.hpp"
+#include "xss/common/context.hpp"
+#include "xss/common/util.hpp"
 #include <omp.h>
 
 namespace xss {
@@ -41,18 +41,14 @@ namespace internal {
             bool build_lyndon,
             typename index_type,
             typename value_type>
-  static auto pss_and_x_array_parallel(const value_type* text,
-                                       const uint64_t n,
+  static auto pss_and_x_array_parallel(value_type const* const text,
+                                       index_type* const array,
+                                       index_type* const aux,
+                                       uint64_t const n,
                                        int threads,
                                        uint64_t threshold) {
-
     using namespace internal;
     static_assert(!(build_nss && build_lyndon));
-
-    using res_type = typename std::conditional<
-        build_nss || build_lyndon,
-        std::pair<std::vector<index_type>, std::vector<index_type>>,
-        std::vector<index_type>>::type;
 
     if constexpr (build_nss)
       warn_type_width<index_type>(n, "xss::pss_and_nss_array");
@@ -63,22 +59,15 @@ namespace internal {
 
     fix_threshold(threshold);
 
-    res_type result;
-    index_type* array;
-    index_type* aux = nullptr;
-
+    static_assert(std::is_unsigned<index_type>::value);
+    memset(array, 0, n * sizeof(index_type));
     if constexpr (build_nss || build_lyndon) {
-      result.first = std::vector<index_type>(n, 0);
-      result.second = std::vector<index_type>(n, 0);
-      array = result.first.data();
-      aux = result.second.data();
-    } else {
-      result = std::vector<index_type>(n, 0);
-      array = result.data();
+      memset(array, 0, n * sizeof(index_type));
     }
 
     array_context_type<index_type, value_type> ctx{text, array, (index_type) n,
                                                    aux};
+
     array[0] = 0; // will be overwritten with n later
 
     const int p = std::min(
@@ -165,42 +154,42 @@ namespace internal {
       aux[n - 1] = 1;
     if constexpr (build_nss || build_lyndon)
       aux[0] = n - 1;
-
-    return result;
   }
 } // namespace internal
 
-template <typename index_type = uint32_t, typename value_type>
+template <typename index_type, typename value_type>
 static auto
-pss_array_parallel(const value_type* text,
-                   const uint64_t n,
+pss_array_parallel(value_type const* const text,
+                   index_type* const pss,
+                   uint64_t const n,
                    int threads = 0,
                    uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array_parallel<false, false, index_type,
-                                            value_type>(text, n, threads,
-                                                        threshold);
+  return internal::pss_and_x_array_parallel<false, false>(
+      text, pss, (index_type*) nullptr, n, threads, threshold);
 }
 
-template <typename index_type = uint32_t, typename value_type>
+template <typename index_type, typename value_type>
 static auto
-pss_and_nss_array_parallel(const value_type* text,
-                           const uint64_t n,
+pss_and_nss_array_parallel(value_type const* const text,
+                           index_type* const pss,
+                           index_type* const nss,
+                           uint64_t const n,
                            int threads = 0,
                            uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array_parallel<true, false, index_type,
-                                            value_type>(text, n, threads,
-                                                        threshold);
+  return internal::pss_and_x_array_parallel<true, false>(text, pss, nss, n,
+                                                         threads, threshold);
 }
 
-template <typename index_type = uint32_t, typename value_type>
+template <typename index_type, typename value_type>
 static auto pss_and_lyndon_array_parallel(
-    const value_type* text,
-    const uint64_t n,
+    value_type const* const text,
+    index_type* const pss,
+    index_type* const lyndon,
+    uint64_t const n,
     int threads = 0,
     uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array_parallel<false, true, index_type,
-                                            value_type>(text, n, threads,
-                                                        threshold);
+  return internal::pss_and_x_array_parallel<false, true>(text, pss, lyndon, n,
+                                                         threads, threshold);
 }
 
 } // namespace xss

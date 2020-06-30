@@ -27,7 +27,6 @@ void run_generic(const std::string algo,
                  const std::string info,
                  const uint64_t n,
                  const uint64_t runs,
-                 const double out_bpn,
                  runner_type& runner,
                  teardown_type& teardown) {
 
@@ -36,18 +35,12 @@ void run_generic(const std::string algo,
 
   std::pair<uint64_t, uint64_t> time_mem = get_time_mem(runner, teardown, runs);
 
-  const uint64_t total_memory = time_mem.second + n;
-  const int64_t additional_memory = time_mem.second - ((n * out_bpn) / 8);
-
-  std::cout << "median_time=" << time_mem.first
-            << " total_memory=" << total_memory
-            << " additional_memory=" << additional_memory << " ";
-
+  const uint64_t additional_memory = time_mem.second;
   auto mibs = (n / 1024.0 / 1024.0) / (time_mem.first / 1000.0);
-  auto bpn = (8.0 * total_memory) / n;
   auto additional_bpn = (8.0 * additional_memory) / n;
 
-  std::cout << "mibs=" << mibs << " bpn=" << bpn
+  std::cout << "median_time=" << time_mem.first << " mibs=" << mibs
+            << " additional_memory=" << additional_memory
             << " additional_bpn=" << additional_bpn << std::endl;
 }
 
@@ -56,8 +49,7 @@ void run_generic(const std::string algo,
                  const std::string info,
                  const uint64_t n,
                  const uint64_t runs,
-                 const double out_bpn,
                  runner_type& runner) {
   auto teardown = []() {};
-  run_generic(algo, info, n, runs, out_bpn, runner, teardown);
+  run_generic(algo, info, n, runs, runner, teardown);
 }

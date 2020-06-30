@@ -23,9 +23,11 @@
 
 #pragma once
 
-template <typename index_type = uint32_t, typename value_type>
-static auto lyndon_isa_nsv(const value_type* text, const uint64_t n) {
+template <typename index_type, typename value_type>
+static void lyndon_isa_nsv(value_type const* const text, index_type * const result, const uint64_t n) {
   static_assert(sizeof(index_type) == 4 || sizeof(index_type) == 8);
+  static_assert(std::is_unsigned<index_type>::value);
+
   if (sizeof(index_type) == 4 && n > std::numeric_limits<int>::max()) {
     std::cerr << "WARNING: lyndon_isa_nsv --- n=" << n
               << ": Given index_type of width " << sizeof(index_type)
@@ -35,8 +37,7 @@ static auto lyndon_isa_nsv(const value_type* text, const uint64_t n) {
   using sa_type = typename std::conditional<sizeof(index_type) == 4, int32_t,
                                             int64_t>::type;
 
-  std::vector<index_type> result(n);
-  sa_type* sa = (sa_type*) result.data();
+  sa_type* sa = (sa_type*) result;
   if constexpr (sizeof(index_type) == 4) {
     divsufsort(text, sa, n);
   } else {
@@ -57,5 +58,4 @@ static auto lyndon_isa_nsv(const value_type* text, const uint64_t n) {
     result[i] = j - i;
   }
   delete isa;
-  return result;
 }

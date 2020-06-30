@@ -21,29 +21,25 @@
 #pragma once
 
 #include "amortized_lookahead.hpp"
-#include "common/context.hpp"
-#include "common/util.hpp"
 #include "find_pss.hpp"
 #include "run_extension.hpp"
+#include "xss/common/context.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
 
 namespace internal {
-
   template <bool build_nss,
             bool build_lyndon,
             typename index_type,
             typename value_type>
   static auto
-  pss_and_x_array(const value_type* text,
-                  const uint64_t n,
+  pss_and_x_array(value_type const* const text,
+                  index_type* const array,
+                  index_type* const aux,
+                  uint64_t const n,
                   uint64_t threshold = internal::DEFAULT_THRESHOLD) {
     using namespace internal;
-
-    using res_type = typename std::conditional<
-        build_nss || build_lyndon,
-        std::pair<std::vector<index_type>, std::vector<index_type>>,
-        std::vector<index_type>>::type;
 
     static_assert(!(build_nss && build_lyndon));
 
@@ -56,26 +52,17 @@ namespace internal {
 
     fix_threshold(threshold);
 
-    res_type result;
-    index_type* array;
-    index_type* aux;
-
+    static_assert(std::is_unsigned<index_type>::value);
+    memset(array, 0, n * sizeof(index_type));
     if constexpr (build_nss || build_lyndon) {
-      result.first = std::vector<index_type>(n, 0);
-      result.second = std::vector<index_type>(n, 0);
-      array = result.first.data();
-      aux = result.second.data();
-    } else {
-      result = std::vector<index_type>(n, 0);
-      array = result.data();
+      memset(array, 0, n * sizeof(index_type));
     }
 
-    array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
+    array_context_type<index_type, value_type> ctx{text, array, (index_type) n, aux};
 
     array[0] = 0; // will be overwritten with n later
     if constexpr (build_nss || build_lyndon) {
       aux[0] = n - 1;
-      ctx.aux = aux;
     }
 
     index_type j, lce;
@@ -138,48 +125,53 @@ namespace internal {
         j = array[j];
       }
     }
-
-    return result;
   }
 
 } // namespace internal
 
-template <typename index_type = uint32_t, typename value_type>
-static auto pss_array(const value_type* text,
-                      const uint64_t n,
+template <typename index_type, typename value_type>
+static auto pss_array(value_type const* const text,
+                      index_type* const pss,
+                      uint64_t const n,
                       uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array<false, false, index_type, value_type>(
-      text, n, threshold);
+  return internal::pss_and_x_array<false, false>(
+      text, pss, (index_type*) nullptr, n, threshold);
 }
 
-template <typename index_type = uint32_t, typename value_type>
+template <typename index_type, typename value_type>
 static auto
-pss_and_nss_array(const value_type* text,
-                  const uint64_t n,
+pss_and_nss_array(value_type const* const text,
+                  index_type* const pss,
+                  index_type* const lyndon,
+                  uint64_t const n,
                   uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array<true, false, index_type, value_type>(
-      text, n, threshold);
+  return internal::pss_and_x_array<true, false>(text, pss, lyndon, n,
+                                                threshold);
 }
 
-template <typename index_type = uint32_t, typename value_type>
+template <typename index_type, typename value_type>
 static auto
-pss_and_lyndon_array(const value_type* text,
-                     const uint64_t n,
+pss_and_lyndon_array(value_type const* const text,
+                     index_type* const pss,
+                     index_type* const lyndon,
+                     uint64_t const n,
                      uint64_t threshold = internal::DEFAULT_THRESHOLD) {
-  return internal::pss_and_x_array<false, true, index_type, value_type>(
-      text, n, threshold);
+  return internal::pss_and_x_array<false, true>(text, pss, lyndon, n,
+                                                threshold);
 }
 
-template <typename index_type = uint32_t, typename value_type>
-static auto nss_array(const value_type* text,
-                      const uint64_t n,
+template <typename index_type, typename value_type>
+static void nss_array(value_type const* const text,
+                      index_type* const array,
+                      uint64_t const n,
                       uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
   warn_type_width<index_type>(n, "xss::nss_array");
   fix_threshold(threshold);
 
-  std::vector<index_type> result(n, 0);
-  index_type* array = result.data();
+  static_assert(std::is_unsigned<index_type>::value);
+  memset(array, 0, n * sizeof(index_type));
+
   array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
 
   array[0] = 0; // will be overwritten with n - 1 later
@@ -232,20 +224,20 @@ static auto nss_array(const value_type* text,
 
   array[0] = n - 1;
   array[n - 1] = n;
-
-  return result;
 }
 
-template <typename index_type = uint32_t, typename value_type>
-static auto lyndon_array(const value_type* text,
-                         const uint64_t n,
+template <typename index_type, typename value_type>
+static void lyndon_array(value_type const* const text,
+                         index_type* const array,
+                         uint64_t const n,
                          uint64_t threshold = internal::DEFAULT_THRESHOLD) {
   using namespace internal;
   warn_type_width<index_type>(n, "xss::lyndon_array");
   fix_threshold(threshold);
 
-  std::vector<index_type> result(n, 0);
-  index_type* array = result.data();
+  static_assert(std::is_unsigned<index_type>::value);
+  memset(array, 0, n * sizeof(index_type));
+
   array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
 
   array[0] = 0; // will be overwritten with n - 1 later
@@ -298,24 +290,6 @@ static auto lyndon_array(const value_type* text,
 
   array[0] = n - 1;
   array[n - 1] = 1;
-
-  return result;
 }
-
-// template <typename nss_type, typename index_type>
-// static nss_type& nss_to_lyndon(nss_type& nss, const index_type n) {
-//  for (index_type i = 0; i < n; ++i) {
-//    nss[i] -= i;
-//  }
-//  return nss;
-//}
-//
-// template <typename lyndon_type, typename index_type>
-// static lyndon_type& lyndon_to_nss(lyndon_type& lyndon, const index_type n) {
-//  for (index_type i = 0; i < n; ++i) {
-//    lyndon[i] += i;
-//  }
-//  return lyndon;
-//}
 
 } // namespace xss

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "common/util.hpp"
 #include "stack.hpp"
+#include "xss/common/util.hpp"
 
 namespace xss {
 namespace internal {

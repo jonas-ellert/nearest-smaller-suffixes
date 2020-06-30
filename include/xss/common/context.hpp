@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include "../tree/bit_vector.hpp"
 #include "lce.hpp"
 #include "util.hpp"
+#include "xss/tree/bit_vector.hpp"
 
 namespace xss {
 namespace internal {
