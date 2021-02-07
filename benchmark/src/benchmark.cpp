@@ -8,7 +8,7 @@
 #include <sstream>
 #include <tlx/cmdline_parser.hpp>
 #include <xss/array/sequential/runs.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 
 struct {
   std::vector<std::string> file_paths;
@@ -108,7 +108,7 @@ int main(int argc, char const* argv[]) {
     uint8_t sigma = 0;
     std::string info;
 
-    if (std::filesystem::path(file).filename().string().size() > 1) {
+    if (std::experimental::filesystem::path(file).filename().string().size() > 1) {
       sigma = 0;
       text_vec = file_to_instance(file, s.prefix_size, sigma);
       info = std::string("file=") + file + " sigma=" + std::to_string(sigma);
