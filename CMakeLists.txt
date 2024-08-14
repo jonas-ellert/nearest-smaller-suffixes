@@ -45,7 +45,7 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif(CCACHE_FOUND)
 
-# Compiler flags         -Winline \ -Wno-error=inline \
+# Compiler flags         -Winline \ -Wno-error=inline
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
         -fopenmp \
         -Wall \
