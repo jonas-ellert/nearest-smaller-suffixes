@@ -57,5 +57,5 @@ static void lyndon_isa_nsv(value_type const* const text, index_type * const resu
     }
     result[i] = j - i;
   }
-  delete isa;
+  free(isa);
 }

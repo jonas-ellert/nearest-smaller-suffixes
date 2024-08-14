@@ -93,7 +93,7 @@ public:
   }
 
   ~bit_vector() {
-    delete delete_data_;
+    free(delete_data_);
   }
 
   bit_vector& operator=(bit_vector&& other) {
