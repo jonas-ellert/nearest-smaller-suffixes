@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "xss/array/parallel/algorithm.hpp"
-#include "xss/array/sequential/algorithm.hpp"
+#include "xss/array/algorithm.hpp"
 #include "xss/tree/algorithm.hpp"
 #include "xss/tree/support/pss_tree_support_naive.hpp"
