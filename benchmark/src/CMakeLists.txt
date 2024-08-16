@@ -8,7 +8,7 @@ include(ExternalProject)
 ExternalProject_Add(
         fetch_tlx PREFIX external/tlx
         GIT_REPOSITORY https://github.com/tlx/tlx
-        GIT_TAG 1052dc757aad89b5d2bf442a17c22c4c0e697bf0
+        GIT_TAG 9c85448eca89d69a1ad5d9e7fcc131ca17e437cf
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         UPDATE_COMMAND ""
         EXCLUDE_FROM_ALL 1
