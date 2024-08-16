@@ -93,10 +93,10 @@ static void instance_tests(instance_collection&& instances) {
       check_type::check_nss_vs_lyndon(t, nss, pss_and_lyndon.second);
     } else {
       sdsl::bit_vector bv(2 * t.size() + 2);
-      xss::pss_tree(t.data(), t.size(), bv.data());
+      xss::pss_tree(t.data(), bv.data(), t.size());
       check_type::check_bps(t, bv);
       std::reverse(t.begin(), t.end());
-      xss::pss_tree(t.data(), t.size(), bv.data());
+      xss::pss_tree(t.data(), bv.data(), t.size());
       check_type::check_bps(t, bv);
     }
   };

@@ -20,5 +20,51 @@
 
 #pragma once
 
+#include <utility>
+#include <vector>
+
 constexpr static uint8_t test_gen_sentinel = '\0';
 using vec_type = std::vector<uint8_t>;
+
+
+namespace xss {
+
+constexpr uint64_t PSS = 0;
+constexpr uint64_t NSS = 1;
+constexpr uint64_t LYNDON = 2;
+
+template<uint64_t first_array, uint64_t second_array = first_array>
+auto get(uint8_t const * const text, uint64_t const len) {
+  
+  static_assert(0 <= first_array && first_array <= 2);
+  static_assert(0 <= second_array && second_array <= 2);
+  static_assert(second_array == first_array || (first_array == PSS && second_array != PSS));
+  
+  if constexpr (first_array != second_array) {
+    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> result 
+      { std::vector<uint32_t>(len), std::vector<uint32_t>(len) };
+      
+    if constexpr (second_array == NSS) 
+      pss_and_nss_array(text, result.first.data(), result.second.data(), len);
+    else 
+      pss_and_lyndon_array(text, result.first.data(), result.second.data(), len);
+      
+    return result;
+  }
+  else {
+    std::vector<uint32_t> result(len);
+    
+    if constexpr(second_array == PSS)
+      pss_array(text, result.data(), len);
+    else if constexpr(second_array == NSS)
+      nss_array(text, result.data(), len);
+    else 
+      lyndon_array(text, result.data(), len);
+    
+    return result;
+  }
+}
+
+
+
+}

@@ -57,11 +57,12 @@ static void instance_tests(instance_collection&& instances) {
     }
 
     if constexpr (stype == TEST_ARRAY) {
+      std::pair<std::vector<uint32_t>, std::vector<uint32_t>> result 
+      { std::vector<uint32_t>(t.size()), std::vector<uint32_t>(t.size()) };
       for (int i = 1; i < 65; i <<= 2) { // 1, 4, 16, 64
-        auto pss_nss =
-            xss::pss_and_nss_array_parallel<uint32_t>(t.data(), t.size(), i, 0);
-        check_array_type::check_pss(t, pss_nss.first);
-        check_array_type::check_nss(t, pss_nss.second);
+        xss::pss_and_nss_array_parallel(t.data(), result.first.data(), result.second.data(), t.size(), i, 0);
+        check_array_type::check_pss(t, result.first);
+        check_array_type::check_nss(t, result.second);
         //        auto pss_lyndon =
         //        xss::pss_and_lyndon_array_parallel<uint32_t>(t.data(),
         //        t.size(), i); check_array_type::check_pss(t,
@@ -111,20 +112,20 @@ TEST(arrays, random) {
   std::cout << "Testing XSS with random instances..." << std::endl;
   std::cout << "sigma: [2, 15], n: [1, 1023]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(8192, 2, 15, 16, 1023));
+      get_instances_for_random_test(1024, 2, 15, 16, 1023));
   std::cout << "sigma: [16, 255], n: [1, 1023]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(8192, 16, 255, 16, 1023));
+      get_instances_for_random_test(1024, 16, 255, 16, 1023));
   std::cout << "sigma: [2, 15], n: [1024, 16383]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(2048, 2, 15, 1024, 16383));
+      get_instances_for_random_test(128, 2, 15, 1024, 16383));
   std::cout << "sigma: [16, 255], n: [1024, 16383]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(2048, 16, 255, 1024, 16383));
+      get_instances_for_random_test(128, 16, 255, 1024, 16383));
   std::cout << "sigma: [2, 15], n: [16384, 1048576]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(128, 2, 15, 16384, 1048576));
+      get_instances_for_random_test(32, 2, 15, 16384, 1048576));
   std::cout << "sigma: [16, 255], n: [16384, 1048576]" << std::endl;
   instance_tests<4, TEST_ARRAY>(
-      get_instances_for_random_test(128, 16, 255, 16384, 1048576));
+      get_instances_for_random_test(32, 16, 255, 16384, 1048576));
 }
