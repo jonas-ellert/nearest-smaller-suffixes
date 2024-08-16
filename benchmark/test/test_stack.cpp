@@ -20,7 +20,7 @@
 
 #include "util/random.hpp"
 #include <gtest/gtest.h>
-#include <tree/stack.hpp>
+#include <xss/tree/stack.hpp>
 
 constexpr static uint64_t number_of_elements = 1024ULL * 1024;
 
