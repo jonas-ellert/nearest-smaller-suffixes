@@ -25,51 +25,20 @@
 #include <limits>
 
 
-namespace xssinternal {
-  constexpr static uint64_t DEFAULT_THRESHOLD = 128;
-}
-
 // INTERFACE:
-
-
 template <typename index_type, typename value_type>
-static void lyndon_array(value_type const* const text,
-                         index_type* const array,
-                         uint64_t const n,
-                         uint64_t threshold = xssinternal::DEFAULT_THRESHOLD);
+static void lyndon_array_nosentinels(value_type const* const text,
+                                     index_type* const array,
+                                     uint64_t const n,
+                                     uint64_t threshold = 128);
                          
                          
+// INTERFACE:
 template <typename index_type, typename value_type>
-static void nss_array(value_type const* const text,
-                      index_type* const array,
-                      uint64_t const n,
-                      uint64_t threshold = xssinternal::DEFAULT_THRESHOLD);
-                      
-                      
-template <typename index_type, typename value_type>
-static auto pss_array(value_type const* const text,
-                      index_type* const pss,
-                      uint64_t const n,
-                      uint64_t threshold = xssinternal::DEFAULT_THRESHOLD);
-                      
-                      
-template <typename index_type, typename value_type>
-static auto
-pss_and_lyndon_array(value_type const* const text,
-                     index_type* const pss,
-                     index_type* const lyndon,
-                     uint64_t const n,
-                     uint64_t threshold = xssinternal::DEFAULT_THRESHOLD);
-                     
-                     
-template <typename index_type, typename value_type>
-static auto
-pss_and_nss_array(value_type const* const text,
-                  index_type* const pss,
-                  index_type* const lyndon,
-                  uint64_t const n,
-                  uint64_t threshold = xssinternal::DEFAULT_THRESHOLD);
-
+static void lyndon_array_sentinels(value_type const* const text,
+                                   index_type* const array,
+                                   uint64_t const n,
+                                   uint64_t threshold = 128);
 
 
 // IMPLEMENTATION
@@ -80,74 +49,141 @@ pss_and_nss_array(value_type const* const text,
 
 namespace xssinternal {
   
+template <typename text_type, typename array_type>
+static void lyndon_array_internal(text_type const &text,
+                                  array_type &array,
+                                  uint64_t const n,
+                                  uint64_t threshold);
+
+template <typename value_type>
+struct text_sentinel_wrapper {
+  value_type const * const text;
+  size_t const n;
+  size_t const offset;
+  
+  text_sentinel_wrapper(value_type const * const text, size_t const n, size_t offset = 0) : text(text), n(n), offset(offset) {}
+  
+  xss_always_inline int64_t operator[](size_t const i) const {
+    if (xss_likely(0 < i && i <= n)) {
+      return textshift[i];
+    }
+    else {
+      return std::numeric_limits<int64_t>::min();
+    }
+  }
+  
+  text_sentinel_wrapper operator+(size_t const add) const {
+    return text_sentinel_wrapper {text, n, offset + add};
+  }
+  
+ private:
+  value_type const * const textshift = text - 1 + offset;
+};
+
+template <typename index_type>
+struct array_sentinel_wrapper {
+  index_type * const array;
+  index_type left_sentinel;
+  index_type right_sentinel;
+  size_t const n;
+  
+  array_sentinel_wrapper(index_type * const array, size_t const n) : array(array), n(n) {}
+  
+  xss_always_inline index_type& operator[](size_t const i) {
+    if (xss_likely(0 < i && i <= n)) {
+      return arrayshift[i];
+    }
+    else {
+      return (i == 0) ? left_sentinel : right_sentinel;
+    }
+  }
+  
+ private:
+  index_type * const arrayshift = array - 1 ;
+};
+
+
+
+}
+
+template <typename index_type, typename value_type>
+static void lyndon_array_nosentinels(value_type const* const text,
+                                     index_type* const array,
+                                     uint64_t const n,
+                                     uint64_t threshold) {
+                           
+  xssinternal::text_sentinel_wrapper<value_type> wrap_text(text, n);
+  xssinternal::array_sentinel_wrapper<index_type> wrap_array(array, n);
+  xssinternal::lyndon_array_internal(wrap_text, wrap_array, n + 2, threshold);
+}
+
+
+template <typename index_type, typename value_type>
+static void lyndon_array_sentinels(value_type const* const text,
+                                   index_type* const array,
+                                   uint64_t const n,
+                                   uint64_t threshold) {
+  xssinternal::lyndon_array_internal(text, array, n, threshold);
+}
+
+
+namespace xssinternal {
+  
   // can never be below 8
   constexpr static uint64_t MIN_THRESHOLD = 8;
 
   inline static void fix_threshold(uint64_t& threshold) {
     threshold = std::max(threshold, MIN_THRESHOLD);
-  }
-
-  template <typename index_type>
-  static void warn_type_width(const uint64_t n, const std::string name) {
-    if (n > std::numeric_limits<index_type>::max()) {
-      std::cerr << "WARNING: " << name << " --- n=" << n
-                << ": Given index_type of width " << sizeof(index_type)
-                << " bytes is insufficient!" << std::endl;
-    }
-  }
+  }  
   
-  
-  template <typename index_type, typename value_type>
+  template <typename text_type>
   struct lce_type {
-    const value_type* text;
+    text_type const &text;
 
-    xss_always_inline index_type without_bounds(const index_type l,
-                                                const index_type r,
-                                                index_type lce = 0) const {
+    xss_always_inline size_t without_bounds(const size_t l,
+                                            const size_t r,
+                                            size_t lce = 0) const {
       while (text[l + lce] == text[r + lce])
         ++lce;
       return lce;
     }
 
-    xss_always_inline index_type
-    with_both_bounds(const index_type l,
-                     const index_type r,
-                     index_type lower,
-                     const index_type upper) const {
+    xss_always_inline size_t
+    with_both_bounds(const size_t l,
+                     const size_t r,
+                     size_t lower,
+                     const size_t upper) const {
       while (lower < upper && text[l + lower] == text[r + lower])
         ++lower;
       return lower;
     }
 
-    xss_always_inline index_type with_upper_bound(
-        const index_type l, const index_type r, const index_type upper) const {
+    xss_always_inline size_t with_upper_bound(
+        const size_t l, const size_t r, const size_t upper) const {
       return with_both_bounds(l, r, 0, upper);
     }
 
-    xss_always_inline index_type with_lower_bound(
-        const index_type l, const index_type r, const index_type lower) const {
+    xss_always_inline size_t with_lower_bound(
+        const size_t l, const size_t r, const size_t lower) const {
       return without_bounds(l, r, lower);
     }
   };
   
   
-  template <typename index_type, typename value_type>
+  template <typename text_type, typename array_type>
   struct array_context_type {
 
-    const value_type* text;
-    index_type* array;
-    const index_type n;
+    text_type const &text;
+    array_type &array;
+    size_t const n;
 
-    index_type* aux = nullptr;
-
-    const lce_type<index_type, value_type> get_lce =
-        lce_type<index_type, value_type>{text};
+    const lce_type<text_type> get_lce = lce_type<text_type>{text};
   };
   
   // DUVAL
-  template <typename value_type>
+  template <typename text_type>
   xss_always_inline static std::pair<uint64_t, uint64_t>
-  is_extended_lyndon_run(const value_type* text, const uint64_t n) {
+  is_extended_lyndon_run(text_type const &text, const uint64_t n) {
     std::pair<uint64_t, uint64_t> result = {0, 0};
     uint64_t i = 0;
     while (i < n) {
@@ -177,20 +213,20 @@ namespace xssinternal {
     return result;
   }
   
-  template <typename index_type, typename value_type>
-  xss_always_inline index_type get_anchor(const value_type* lce_str,
-                                          const index_type lce_len) {
+  template <typename text_type>
+  xss_always_inline size_t get_anchor(text_type const &lce_str,
+                                      const size_t lce_len) {
 
-    const index_type ell = lce_len >> 2;
+    const size_t ell = lce_len >> 2;
 
     // check if gamm_ell is an extended lyndon run
-    const auto duval = is_extended_lyndon_run(&(lce_str[ell]), lce_len - ell);
+    const auto duval = is_extended_lyndon_run(lce_str + ell, lce_len - ell);
 
     // try to extend the lyndon run as far as possible to the left
     if (duval.first > 0) {
-      const index_type period = duval.first;
-      const auto repetition_eq = [&](const index_type l, const index_type r) {
-        for (index_type k = 0; k < period; ++k)
+      const size_t period = duval.first;
+      const auto repetition_eq = [&](const size_t l, const size_t r) {
+        for (size_t k = 0; k < period; ++k)
           if (lce_str[l + k] != lce_str[r + k])
             return false;
         return true;
@@ -199,65 +235,20 @@ namespace xssinternal {
       while (lhs >= 0 && repetition_eq(lhs, lhs + period)) {
         lhs -= period;
       }
-      return std::min(ell, (index_type)(lhs + (period << 1)));
+      return std::min(ell, (size_t)(lhs + (period << 1)));
     } else {
       return ell;
     }
   }
-  
-  
-  template <bool build_nss,
-            bool build_lyndon,
-            typename ctx_type,
-            typename index_type>
-  xss_always_inline static void
-  pss_array_amortized_lookahead(ctx_type& ctx,
-                                const index_type j,
-                                index_type& i,
-                                index_type max_lce,
-                                const index_type distance) {
-    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
-    // copy NSS values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
-      ctx.array[i + k] = ctx.array[j + k] + distance;
-      if constexpr (build_nss)
-        ctx.aux[i + k] = ctx.aux[j + k] + distance;
-      if constexpr (build_lyndon)
-        ctx.aux[i + k] = ctx.aux[j + k];
-    }
-    i += anchor - 1;
-  }
 
-  template <typename ctx_type, typename index_type>
-  xss_always_inline static void
-  nss_array_amortized_lookahead(ctx_type& ctx,
-                                const index_type j,
-                                index_type& i,
-                                index_type max_lce,
-                                const index_type distance) {
-
-    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
-    index_type next_pss = i;
-    // copy NSS values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
-      if (ctx.array[j + k] < j + anchor) {
-        ctx.array[i + k] = ctx.array[j + k] + distance;
-      } else {
-        ctx.array[i + k] = next_pss;
-        next_pss = i + k;
-      }
-    }
-    i += anchor - 1;
-  }
-
-  template <typename ctx_type, typename index_type>
+  template <typename ctx_type>
   xss_always_inline static void lyndon_array_amortized_lookahead(
-      ctx_type& ctx, const index_type j, index_type& i, index_type max_lce) {
+      ctx_type& ctx, const size_t j, size_t& i, size_t max_lce) {
 
-    const index_type anchor = get_anchor(&(ctx.text[i]), max_lce);
-    index_type next_pss = i;
+    const size_t anchor = get_anchor(ctx.text + i, max_lce);
+    size_t next_pss = i;
     // copy NSS values up to anchor
-    for (index_type k = 1; k < anchor; ++k) {
+    for (size_t k = 1; k < anchor; ++k) {
       if (ctx.array[j + k] + j + k < j + anchor) {
         ctx.array[i + k] = ctx.array[j + k];
       } else {
@@ -266,83 +257,6 @@ namespace xssinternal {
       }
     }
     i += anchor - 1;
-  }
-  
-  
-  template <bool build_nss,
-            bool build_lyndon,
-            typename ctx_type,
-            typename index_type>
-  xss_always_inline static void
-  pss_array_run_extension(ctx_type& ctx,
-                          const index_type j,
-                          index_type& i,
-                          index_type max_lce,
-                          const index_type period) {
-    bool j_smaller_i = ctx.text[j + max_lce] < ctx.text[i + max_lce];
-    const index_type repetitions = max_lce / period - 1;
-    const index_type new_i = i + (repetitions * period);
-
-    for (index_type k = i + 1; k < new_i; ++k) {
-      ctx.array[k] = ctx.array[k - period] + period;
-      if constexpr (build_nss)
-        ctx.aux[k] = ctx.aux[k - period] + period;
-      if constexpr (build_lyndon)
-        ctx.aux[k] = ctx.aux[k - period];
-    }
-
-    // INCREASING RUN
-    if (j_smaller_i) {
-      for (index_type r = 0; r < repetitions; ++r) {
-        i += period;
-        ctx.array[i] = i - period;
-      }
-    }
-    // DECREASING RUN
-    else {
-      const index_type pss_of_new_i = ctx.array[i];
-      for (index_type r = 0; r < repetitions; ++r) {
-        if constexpr (build_nss)
-          ctx.aux[i] = i + period;
-        if constexpr (build_lyndon)
-          ctx.aux[i] = period;
-        i += period;
-        ctx.array[i] = pss_of_new_i;
-      }
-    }
-  }
-
-  template <typename ctx_type, typename index_type>
-  xss_always_inline static void
-  nss_array_run_extension(ctx_type& ctx,
-                          const index_type j,
-                          index_type& i,
-                          index_type max_lce,
-                          const index_type period) {
-    bool j_smaller_i = ctx.text[j + max_lce] < ctx.text[i + max_lce];
-    const index_type repetitions = max_lce / period - 1;
-    const index_type new_i = i + (repetitions * period);
-
-    for (index_type k = i + 1; k < new_i; ++k) {
-      ctx.array[k] = ctx.array[k - period] + period;
-    }
-
-    // INCREASING RUN
-    if (j_smaller_i) {
-      for (index_type r = 0; r < repetitions; ++r) {
-        i += period;
-        ctx.array[i] = i - period;
-      }
-    }
-    // DECREASING RUN
-    else {
-      const index_type pss_of_new_i = ctx.array[i];
-      for (index_type r = 0; r < repetitions; ++r) {
-        ctx.array[i] = i + period;
-        i += period;
-      }
-      ctx.array[i] = pss_of_new_i;
-    }
   }
 
   template <typename ctx_type, typename index_type>
@@ -457,56 +371,32 @@ namespace xssinternal {
     }
   }
   
-  
-  
-  
-  template <bool build_nss,
-            bool build_lyndon,
-            typename index_type,
-            typename value_type>
-  static auto
-  pss_and_x_array(value_type const* const text,
-                  index_type* const array,
-                  index_type* const aux,
-                  uint64_t const n,
-                  uint64_t threshold) {
-
-    static_assert(!(build_nss && build_lyndon));
-
-    if constexpr (build_nss)
-      warn_type_width<index_type>(n, "xss::pss_and_nss_array");
-    else if constexpr (build_lyndon)
-      warn_type_width<index_type>(n, "xss::pss_and_lyndon_array");
-    else
-      warn_type_width<index_type>(n, "xss::pss_array");
-
+  template <typename text_type, typename array_type>
+  static void lyndon_array_internal(text_type const &text,
+                                    array_type &array,
+                                    uint64_t const n,
+                                    uint64_t threshold) {
+    using namespace xssinternal;
     fix_threshold(threshold);
-
-    static_assert(std::is_unsigned<index_type>::value);
-    memset(array, 0, n * sizeof(index_type));
-    if constexpr (build_nss || build_lyndon) {
-      memset(array, 0, n * sizeof(index_type));
+    
+    for (size_t i = 0; i < n; ++i) {
+      array[i] = 0;
     }
 
-    array_context_type<index_type, value_type> ctx{text, array, (index_type) n, aux};
+    array_context_type<text_type, array_type> ctx{text, array, n};
 
-    array[0] = 0; // will be overwritten with n later
-    if constexpr (build_nss || build_lyndon) {
-      aux[0] = n - 1;
-    }
+    array[0] = 0; // will be overwritten with n - 1 later
 
-    index_type j, lce;
-    for (index_type i = 1; i < n - 1; ++i) {
+    size_t j, lce;
+    for (size_t i = 1; i < n - 1; ++i) {
       j = i - 1;
       lce = ctx.get_lce.without_bounds(j, i);
 
-      if (xss_likely(lce <= threshold)) {
+      if (xss_likely(lce < threshold)) {
         while (text[j + lce] > text[i + lce]) {
-          if constexpr (build_nss)
-            aux[j] = i;
-          if constexpr (build_lyndon)
-            aux[j] = i - j;
-          j = array[j];
+          size_t next_j = array[j];
+          array[j] = i - j;
+          j = next_j;
           lce = ctx.get_lce.without_bounds(j, i);
           if (xss_unlikely(lce > threshold))
             break;
@@ -518,206 +408,35 @@ namespace xssinternal {
         }
       }
 
-      index_type max_lce, max_lce_j, pss_of_i;
+      size_t max_lce, max_lce_j, pss_of_i;
       xss_array_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
 
-      if constexpr (build_nss || build_lyndon) {
-        while (j > pss_of_i) {
-          if constexpr (build_nss)
-            aux[j] = i;
-          if constexpr (build_lyndon)
-            aux[j] = i - j;
-          j = array[j];
-        }
+      while (j > pss_of_i) {
+        size_t next_j = array[j];
+        array[j] = i - j;
+        j = next_j;
       }
-
       array[i] = pss_of_i;
 
-      const index_type distance = i - max_lce_j;
+      const size_t distance = i - max_lce_j;
       if (xss_unlikely(max_lce >= 2 * distance))
-        pss_array_run_extension<build_nss, build_lyndon>(ctx, max_lce_j, i,
-                                                         max_lce, distance);
+        lyndon_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
       else
-        pss_array_amortized_lookahead<build_nss, build_lyndon>(
-            ctx, max_lce_j, i, max_lce, distance);
+        lyndon_array_amortized_lookahead(ctx, max_lce_j, i, max_lce);
     }
 
-    // PSS does not exist <=> pss[i] = n
-    array[0] = array[n - 1] = n;
-
-    if constexpr (build_nss || build_lyndon) {
-      j = n - 2;
-      while (j > 0) {
-        if constexpr (build_nss)
-          aux[j] = n - 1;
-        if constexpr (build_lyndon)
-          aux[j] = n - j - 1;
-        j = array[j];
-      }
+    // PROCESS ELEMENTS WITHOUT NSS
+    j = n - 2;
+    while (j > 0) {
+      size_t next_j = array[j];
+      array[j] = n - j - 1;
+      j = next_j;
     }
+
+    array[0] = n - 1;
+    array[n - 1] = 1;
   }
 
 } // namespace xssinternal
 
-template <typename index_type, typename value_type>
-static auto pss_array(value_type const* const text,
-                      index_type* const pss,
-                      uint64_t const n,
-                      uint64_t threshold) {
-  return xssinternal::pss_and_x_array<false, false>(
-      text, pss, (index_type*) nullptr, n, threshold);
-}
 
-template <typename index_type, typename value_type>
-static auto
-pss_and_nss_array(value_type const* const text,
-                  index_type* const pss,
-                  index_type* const lyndon,
-                  uint64_t const n,
-                  uint64_t threshold) {
-  return xssinternal::pss_and_x_array<true, false>(text, pss, lyndon, n,
-                                                threshold);
-}
-
-template <typename index_type, typename value_type>
-static auto
-pss_and_lyndon_array(value_type const* const text,
-                     index_type* const pss,
-                     index_type* const lyndon,
-                     uint64_t const n,
-                     uint64_t threshold) {
-  return xssinternal::pss_and_x_array<false, true>(text, pss, lyndon, n,
-                                                threshold);
-}
-
-template <typename index_type, typename value_type>
-static void nss_array(value_type const* const text,
-                      index_type* const array,
-                      uint64_t const n,
-                      uint64_t threshold) {
-  using namespace xssinternal;
-  warn_type_width<index_type>(n, "xss::nss_array");
-  fix_threshold(threshold);
-
-  static_assert(std::is_unsigned<index_type>::value);
-  memset(array, 0, n * sizeof(index_type));
-
-  array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
-
-  array[0] = 0; // will be overwritten with n - 1 later
-
-  index_type j, lce;
-  for (index_type i = 1; i < n - 1; ++i) {
-    j = i - 1;
-    lce = ctx.get_lce.without_bounds(j, i);
-
-    if (xss_likely(lce < threshold)) {
-      while (text[j + lce] > text[i + lce]) {
-        index_type next_j = array[j];
-        array[j] = i;
-        j = next_j;
-        lce = ctx.get_lce.without_bounds(j, i);
-        if (xss_unlikely(lce > threshold))
-          break;
-      }
-
-      if (xss_likely(lce <= threshold)) {
-        array[i] = j;
-        continue;
-      }
-    }
-
-    index_type max_lce, max_lce_j, pss_of_i;
-    xss_array_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
-
-    while (j > pss_of_i) {
-      index_type next_j = array[j];
-      array[j] = i;
-      j = next_j;
-    }
-    array[i] = pss_of_i;
-
-    const index_type distance = i - max_lce_j;
-    if (xss_unlikely(max_lce >= 2 * distance))
-      nss_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
-    else
-      nss_array_amortized_lookahead(ctx, max_lce_j, i, max_lce, distance);
-  }
-
-  // PROCESS ELEMENTS WITHOUT NSS
-  j = n - 2;
-  while (j > 0) {
-    index_type next_j = array[j];
-    array[j] = n - 1;
-    j = next_j;
-  }
-
-  array[0] = n - 1;
-  array[n - 1] = n;
-}
-
-template <typename index_type, typename value_type>
-static void lyndon_array(value_type const* const text,
-                         index_type* const array,
-                         uint64_t const n,
-                         uint64_t threshold) {
-  using namespace xssinternal;
-  warn_type_width<index_type>(n, "xss::lyndon_array");
-  fix_threshold(threshold);
-
-  static_assert(std::is_unsigned<index_type>::value);
-  memset(array, 0, n * sizeof(index_type));
-
-  array_context_type<index_type, value_type> ctx{text, array, (index_type) n};
-
-  array[0] = 0; // will be overwritten with n - 1 later
-
-  index_type j, lce;
-  for (index_type i = 1; i < n - 1; ++i) {
-    j = i - 1;
-    lce = ctx.get_lce.without_bounds(j, i);
-
-    if (xss_likely(lce < threshold)) {
-      while (text[j + lce] > text[i + lce]) {
-        index_type next_j = array[j];
-        array[j] = i - j;
-        j = next_j;
-        lce = ctx.get_lce.without_bounds(j, i);
-        if (xss_unlikely(lce > threshold))
-          break;
-      }
-
-      if (xss_likely(lce <= threshold)) {
-        array[i] = j;
-        continue;
-      }
-    }
-
-    index_type max_lce, max_lce_j, pss_of_i;
-    xss_array_find_pss(ctx, j, i, lce, max_lce_j, max_lce, pss_of_i);
-
-    while (j > pss_of_i) {
-      index_type next_j = array[j];
-      array[j] = i - j;
-      j = next_j;
-    }
-    array[i] = pss_of_i;
-
-    const index_type distance = i - max_lce_j;
-    if (xss_unlikely(max_lce >= 2 * distance))
-      lyndon_array_run_extension(ctx, max_lce_j, i, max_lce, distance);
-    else
-      lyndon_array_amortized_lookahead(ctx, max_lce_j, i, max_lce);
-  }
-
-  // PROCESS ELEMENTS WITHOUT NSS
-  j = n - 2;
-  while (j > 0) {
-    index_type next_j = array[j];
-    array[j] = n - j - 1;
-    j = next_j;
-  }
-
-  array[0] = n - 1;
-  array[n - 1] = 1;
-}
